@@ -1,0 +1,136 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aeron-cluster
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: True # This is set so DNS resolves at all times, despite the Readiness check
+  selector:
+    app.kubernetes.io/component: aeron-cluster
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aeron-cluster-client
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: True # This is set so DNS resolves at all times, despite the Readiness check
+  selector:
+    app.kubernetes.io/component: aeron-client
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: aeron-cluster
+  labels:
+    app.kubernetes.io/component: aeron-cluster
+spec:
+  replicas: 3
+  podManagementPolicy: Parallel
+  serviceName: aeron-cluster
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: aeron-cluster
+  volumeClaimTemplates:
+  - metadata:
+      name: data-volume-claim
+    spec:
+      accessModes: [ReadWriteOnce]
+      storageClassName: gp3
+      resources:
+        requests:
+          storage: 1Gi
+  template:
+    metadata:
+      annotations:
+        {}
+      labels:
+        app.kubernetes.io/component: aeron-cluster
+    spec:
+      tolerations:
+        # Select our special benchmark nodes
+        - key: "perftest"
+          operator: "Exists"
+      # Select our special benchmark nodes
+      nodeSelector:
+        weareadaptive.com/nodegroup: "perftest"
+      volumes:
+        - name: hugepage-2mi
+          emptyDir:
+            medium: HugePages-2Mi
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+        - name: node-properties-volume
+          configMap:
+            name: aeron-benchmark-properties
+            items:
+              - key: node.properties
+                path: node.properties
+        - name: cluster-properties-volume
+          configMap:
+            name: aeron-benchmark-properties
+            items:
+              - key: cluster.properties
+                path: cluster.properties
+
+      # Creates the /dev/shm/aeron directory for the aeron driver
+      initContainers:
+        - name: init-container
+          image: busybox
+          command:
+            - mkdir
+          args:
+            - /dev/shm/aeron
+          volumeMounts:
+            - mountPath: /dev/shm
+              name: shm
+      containers:
+        - name: aeron-cluster-node
+          image: 195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:bds
+          imagePullPolicy: Always
+          command:
+            - /opt/aeron-benchmarks/scripts/k8s/k8s-aeron-cluster-node.sh
+          args:
+            - /opt/aeron-benchmarks/scripts/aeron/cluster.properties
+            - /opt/aeron-benchmarks/scripts/aeron/node.properties
+          envFrom:
+            - configMapRef:
+                name: aeron-benchmark-envs
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: POD_INDEX
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
+            # Dynamically configured aeron cluster node properties.
+            # All other properties are passed as mounted volumes.
+            - name: JVM_OPTS
+              value: >
+                -Daeron.cluster.member.id=$(POD_INDEX)
+                -Daeron.cluster.replication.channel=aeron:udp?endpoint=$(POD_NAME):0
+                -Daeron.archive.replication.channel=aeron:udp?endpoint=$(POD_NAME):0
+                -Daeron.archive.control.channel=aeron:udp?endpoint=$(POD_NAME):20004
+          volumeMounts:
+            - mountPath: /hugepages-2Mi
+              name: hugepage-2mi
+            - mountPath: /dev/shm
+              name: shm
+            - name: node-properties-volume
+              mountPath: /opt/aeron-benchmarks/scripts/aeron/node.properties
+              subPath: node.properties
+            - name: cluster-properties-volume
+              mountPath: /opt/aeron-benchmarks/scripts/aeron/cluster.properties
+              subPath: cluster.properties
+          resources:
+            limits:
+              cpu: "8"
+              memory: 10G
+              hugepages-2Mi: 1Gi

@@ -1,0 +1,89 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aeron-benchmark-envs
+data:
+  TEST_OUTPUT_PATH: /dev/shm/results
+  BENCHMARKS_PATH: /opt/aeron-benchmarks
+  NODE0_ADDRESS: aeron-cluster-0.aeron-cluster
+  NODE1_ADDRESS: aeron-cluster-1.aeron-cluster
+  NODE2_ADDRESS: aeron-cluster-2.aeron-cluster
+  CLIENT0_ADDRESS: aeron-cluster-client
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aeron-benchmark-envs-dpdk
+data:
+  AERON_DPDK_THREADS_FROM_CGROUP: "TRUE"
+  AERON_DPDK_TX_MEMPOOL_PER_QUEUE: "true"
+  AERON_DPDK_TX_MEMPOOL_OPS: "ring_mp_mc"
+  AERON_DPDK_TX_MEMPOOL_CACHE_SIZE: "512"
+  AERON_DPDK_RX_MEMPOOL_OPS: "ring_mp_mc"
+  AERON_DPDK_RX_MEMPOOL_CACHE_SIZE: "512"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aeron-benchmark-properties
+data:
+  cluster.properties: |
+    aeron.cluster.members=0,aeron-cluster-0.aeron-cluster:20000,aeron-cluster-0.aeron-cluster:20001,aeron-cluster-0.aeron-cluster:20002,aeron-cluster-0.aeron-cluster:20003,aeron-cluster-0.aeron-cluster:20004|\
+    1,aeron-cluster-1.aeron-cluster:20000,aeron-cluster-1.aeron-cluster:20001,aeron-cluster-1.aeron-cluster:20002,aeron-cluster-1.aeron-cluster:20003,aeron-cluster-1.aeron-cluster:20004|\
+    2,aeron-cluster-2.aeron-cluster:20000,aeron-cluster-2.aeron-cluster:20001,aeron-cluster-2.aeron-cluster:20002,aeron-cluster-2.aeron-cluster:20003,aeron-cluster-2.aeron-cluster:20004|\
+
+    aeron.cluster.ingress.channel=aeron:udp
+    aeron.archive.recording.events.enabled=false
+
+    # Reduce window sizes when running locally to prevent excessive memory usage.
+    # Remove these options when running in a production-like environment.
+    # aeron.term.buffer.sparse.file=true
+    # aeron.pre.touch.mapped.memory=false
+    # aeron.socket.so_sndbuf=128k
+    # aeron.socket.so_rcvbuf=128k
+    # aeron.rcv.initial.window.length=128k
+    # aeron.term.buffer.length=128k
+    # aeron.ipc.term.buffer.length=128k
+
+    # Uncomment to enable latency test history tracking.
+    # io.aeron.benchmarks.track.history=true
+    # io.aeron.benchmarks.cluster.snapshot.size=0
+    # io.aeron.benchmarks.message.transceiver=remote.aeron.io.aeron.benchmarks.ClusterMessageTransceiver
+    # io.aeron.benchmarks.iterations=1000
+
+    # additionally added for setting up tests in k8s
+    io.aeron.benchmarks.output.directory=test-results
+  node.properties: |
+    aeron.dir=/dev/shm/aeron
+    aeron.cluster.dir=cluster/node/cluster
+    aeron.archive.dir=cluster/node/archive
+
+    io.aeron.benchmarks.aeron.cluster.failover.control.server.port=19000
+  benchmark.properties: |
+    aeron.dir=/dev/shm/aeron
+    io.aeron.benchmarks.message.rate=100
+    io.aeron.benchmarks.output.file=bench_out.txt
+
+    aeron.cluster.egress.channel=aeron:udp?endpoint=aeron-cluster-client:0
+    aeron.cluster.ingress.channel=aeron:udp
+    aeron.cluster.ingress.endpoints=0=aeron-cluster-0.aeron-cluster:20000,1=aeron-cluster-1.aeron-cluster:20000,2=aeron-cluster-2.aeron-cluster:20000
+  low-latency-driver.properties: |
+    aeron.dir.delete.on.start=true
+    aeron.dir.delete.on.shutdown=true
+    aeron.print.configuration=true
+    aeron.term.buffer.sparse.file=true
+    aeron.pre.touch.mapped.memory=false
+    aeron.perform.storage.checks=false
+    aeron.socket.so_sndbuf=2m
+    aeron.socket.so_rcvbuf=2m
+    aeron.rcv.initial.window.length=2m
+    aeron.threading.mode=DEDICATED
+    aeron.conductor.idle.strategy=noop
+    aeron.sender.idle.strategy=noop
+    aeron.receiver.idle.strategy=noop
+    aeron.spies.simulate.connection=true
+    aeron.use.windows.high.res.timer=true
+    agrona.disable.bounds.checks=true
+    aeron.driver.timeout=30000
+

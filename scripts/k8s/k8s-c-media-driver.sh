@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Starts the java media driver
+# Starts the C media driver
 # Enabled bash job control!
+
 set -emo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"

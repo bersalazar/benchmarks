@@ -1,15 +1,17 @@
 ---
-# Set test specific config
-# The image ref must be set
+# Update tolerations and nodeselectors
 apiVersion: v1
 kind: Pod
 metadata:
   name: all
+  # Additional multus network
+  annotations:
+    k8s.v1.cni.cncf.io/networks: aeron-network
 spec:
-  # Uncomment me to do host network testing
+  # Use Host networking
   # dnsPolicy: ClusterFirstWithHostNet
   # hostNetwork: true
   containers:
     - name: aeronmd-java
       # This is the benchmarks container with an alternate entrypoint
-      image: "< Ref to benchmark container >"
+      image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:7dc5e94a54f26315204ad149a9de304538ab7620"

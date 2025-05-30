@@ -1,8 +1,5 @@
 ---
-# Set test specific config
-# eg:
-# * image refs
-# * DPDK interface specifics
+# Update tolerations and nodeselectors
 apiVersion: v1
 kind: Pod
 metadata:
@@ -10,7 +7,7 @@ metadata:
 spec:
   containers:
     - name: aeronmd-dpdk
-      image: "< Ref to Aeron DPDK media driver container >"
+      image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeronmd-dpdk:017e81aa45004fed04b58e062e7a27eb70e516f3"
       resources:
         limits:
           # Give us a DPDK NIC through https://github.com/AdaptiveConsulting/k8s-dpdk-mgr

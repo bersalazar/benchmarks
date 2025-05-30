@@ -51,9 +51,8 @@ RUN apt-get update && \
   pipx \
   numactl \
   hwloc && \
-  pip install --break-system-packages hdr-plot && \
+  pip install --break-system-packages hdr-plot \
   pip install --break-system-packages awscli
-
 
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/root/.local/bin
 ENV BENCHMARKS_PATH=/opt/aeron-benchmarks

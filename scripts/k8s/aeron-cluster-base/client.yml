@@ -1,0 +1,103 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aeron-cluster-client
+  labels:
+    app.kubernetes.io/component: aeron-client
+spec:
+  # The benchmark code runs exactly once and isn't restarted
+  restartPolicy: Never
+  terminationGracePeriodSeconds: 5
+  volumes:
+    - name: hugepage-2mi
+      emptyDir:
+        medium: HugePages-2Mi
+    - name: shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 2Gi
+    - name: benchmark-properties-volume
+      configMap:
+        name: aeron-benchmark-properties
+        items:
+          - key: benchmark.properties
+            path: benchmark.properties
+    - name: low-latency-properties-volume
+      configMap:
+        name: aeron-benchmark-properties
+        items:
+          - key: low-latency-driver.properties
+            path: low-latency-driver.properties
+  tolerations:
+    # Select our special benchmark nodes
+    - key: "perftest"
+      operator: "Exists"
+  # Select our special benchmark nodes
+  nodeSelector:
+    weareadaptive.com/nodegroup: "perftest"
+  # Creates the /dev/shm/aeron directory for the aeron driver
+  initContainers:
+    - name: init-container
+      image: busybox
+      command:
+        - mkdir
+      args:
+        - /dev/shm/aeron
+      volumeMounts:
+        - mountPath: /dev/shm
+          name: shm
+  containers:
+    - name: aeronmd-c
+      image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:bds"
+      imagePullPolicy: Always # Always pull the latest image and ensure the latest benchmark code is used
+      command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-c-media-driver.sh"]
+      volumeMounts:
+        - name: shm
+          mountPath: /dev/shm
+      resources:
+        limits:
+          cpu: "8"
+          memory: 8G
+    - name: aeron-cluster-client
+      image: 195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:bds
+      imagePullPolicy: Always # Always pull the latest image and ensure the latest benchmark code is used
+      command:
+        - "k8s/k8s-aeron-cluster-client.sh"
+      args:
+        - "--output-file"
+        - "aeron-echo_c-k8s"
+        - "--message-rate"
+        - "101K"
+        - "--message-length"
+        - "288"
+        - "--iterations"
+        - "60"
+      volumeMounts:
+        - mountPath: /hugepages-2Mi
+          name: hugepage-2mi
+        - mountPath: /dev/shm
+          name: shm
+        - name: benchmark-properties-volume
+          mountPath: /opt/aeron-benchmarks/scripts/aeron/benchmark.properties
+          subPath: benchmark.properties
+        - name: low-latency-properties-volume
+          mountPath: /opt/aeron-benchmarks/scripts/aeron/low-latency-driver.properties
+          subPath: low-latency-driver.properties
+      resources:
+        limits:
+          cpu: "8"
+          memory: 10G
+          hugepages-2Mi: 1Gi
+      envFrom:
+        - configMapRef:
+            name: aeron-benchmark-envs
+      env:
+      - name: POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: POD_INDEX
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['apps.kubernetes.io/pod-index']

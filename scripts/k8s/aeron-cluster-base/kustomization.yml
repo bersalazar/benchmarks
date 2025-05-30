@@ -1,0 +1,10 @@
+# Base deployment - do not apply this, use the specific deployments in the other subdirectories
+
+resources:
+  - properties.yml
+  - cluster.yml
+  - client.yml
+  #- extra-objects.yml
+patches:
+  # allow passing anything basically.
+  #- path: extra-objects.yml
