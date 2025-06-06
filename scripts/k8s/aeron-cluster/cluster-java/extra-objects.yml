@@ -1,0 +1,25 @@
+---
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: aeron-network
+spec:
+  config: '{
+    "cniVersion": "1.0.0",
+    "name": "aeron-network",
+    "plugins": [
+      {
+        "type": "aws-eni",
+        "subnetTagKey": "Name",
+        "subnetTagValue": "adaptive-npr-tmp3-helmtest-data-euw1-az1",
+        "securityGroupNames": [
+          "adaptive-npr-tmp3-helmtest-node"
+        ],
+        "useMock": false
+      },
+      {
+        "type": "tuning",
+        "mtu": 9001
+      }
+    ]
+  }'
