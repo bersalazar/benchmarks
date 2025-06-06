@@ -1,0 +1,27 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aeron-cluster-client
+  labels:
+    app.kubernetes.io/component: aeron-client
+  # Additional multus network
+  annotations:
+    k8s.v1.cni.cncf.io/networks: aeron-network
+spec:
+  containers:
+    - name: aeronmd-c
+      image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:bds"
+      imagePullPolicy: Always
+      command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-c-media-driver.sh"]
+      volumeMounts:
+        - name: shm
+          mountPath: /dev/shm
+      resources:
+        limits:
+          cpu: "8"
+          memory: 8G
+    - name: aeron-cluster-client
+      env:
+        - name: BENCHMARK_TYPE
+          value: "aeron-cluster-c"
