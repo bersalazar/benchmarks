@@ -1,0 +1,14 @@
+# Base deployment - do not apply this, use the specific deployments in the other subdirectories
+
+resources:
+  - ../cluster-base
+  - extra-objects.yml
+patches:
+  - path: aeronmd.yml
+    target:
+      kind: StatefulSet
+  - path: settings.yml
+    target:
+      kind: StatefulSet
+  # allow passing anything basically.
+  - path: extra-objects.yml

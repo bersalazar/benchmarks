@@ -1,0 +1,13 @@
+# This file contains the overrides for aeron-echo-dpdk test
+
+resources:
+  # Adds the base aeron cluster deployment
+  - ../client-base
+patches:
+  # Adds media driver specific config to the cluster client Pod
+  - path: pod.yml
+    target:
+      kind: Pod
+  - path: settings.yml
+    target:
+      kind: Pod

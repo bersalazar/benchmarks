@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# common functions for K8s benchmarking
+# Common functions for K8s benchmarking
 
 #####################################################################################
 # Pins a given thread to a given cpu
@@ -32,55 +32,112 @@ function f_wait_for_process() {
 }
 
 #####################################################################################
+# Waits for a thread to start
+function f_wait_for_thread() {
+  thread="${1:? Please supply the thread name to wait for}"
+  max_retries="${2:-10}"
+  count=0
+  until ps --no-headers -eL -o comm | grep -q "${thread}" || [[ "${count}" -gt "${max_retries}" ]]; do
+    echo "** Waiting for thread start: ${thread} **"
+    count=$((count + 1))
+    sleep 5
+  done
+}
+
+#####################################################################################
 # Waits for all the DNS names to be resolvable
 function f_wait_for_dns() {
-
   # Verify we can get DNS records for the pods
-  until host "${NODE0_ADDRESS:? Please set NODE0_ADDRESS}"
-  do
-    echo "waiting for DNS for ${NODE0_ADDRESS:? Please set NODE0_ADDRESS}"
-    sleep 5
-  done
-  until host "${NODE1_ADDRESS:? Please set NODE1_ADDRESS}"
-  do
-    echo "waiting for DNS for ${NODE1_ADDRESS:? Please set NODE1_ADDRESS}"
-    sleep 5
-  done
-
+  if [[ "${BENCHMARK_TYPE}" == *cluster* ]]; then
+    until host "${NODE0_ADDRESS:? Please set NODE0_ADDRESS}"
+    do
+      echo "waiting for DNS for ${NODE0_ADDRESS:? Please set NODE0_ADDRESS}"
+      sleep 5
+    done
+    until host "${NODE1_ADDRESS:? Please set NODE1_ADDRESS}"
+    do
+      echo "waiting for DNS for ${NODE1_ADDRESS:? Please set NODE1_ADDRESS}"
+      sleep 5
+    done
+    until host "${NODE2_ADDRESS:? Please set NODE2_ADDRESS}"
+    do
+      echo "waiting for DNS for ${NODE1_ADDRESS:? Please set NODE2_ADDRESS}"
+      sleep 5
+    done
+    until host "${CLIENT0_ADDRESS:? Please set CLIENT0_ADDRESS}"
+    do
+      echo "waiting for DNS for ${CLIENT0_ADDRESS:? Please set CLIENT0_ADDRESS}"
+      sleep 5
+    done
+  else
+    until host "${NODE0_ADDRESS:? Please set NODE0_ADDRESS}"
+    do
+      echo "waiting for DNS for ${NODE0_ADDRESS:? Please set NODE0_ADDRESS}"
+      sleep 5
+    done
+    until host "${NODE1_ADDRESS:? Please set NODE1_ADDRESS}"
+    do
+      echo "waiting for DNS for ${NODE1_ADDRESS:? Please set NODE1_ADDRESS}"
+      sleep 5
+    done
+  fi
 }
 #####################################################################################
 # Construct JVM_OPTS with dynamic interface lookup
 function f_set_jvm_opts() {
-
-
   # If this is not a DPDK test...
-  if [[ "${BENCHMARK_TYPE}" =~ dpdk$ ]]
-    then
-      # Don't select an interface
+  if [[ "${BENCHMARK_TYPE}" == *echo* ]]; then
+    # Look up the interface we're supposed to use.
+    case ${POD_NAME} in
+      aeron-benchmark-0)
+        LOCAL_IP="$( host "${NODE0_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
+        ;;
+      aeron-benchmark-1)
+        LOCAL_IP="$( host "${NODE1_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
+        ;;
+      *)
+        echo "Error: Could not resolve IP for POD ${POD_NAME}"
+        exit 1
+        ;;
+    esac
+
+    if [[ "${BENCHMARK_TYPE}" == *dpdk* ]]; then
+      # Don't select an interface if benchmark type is DPDK.
+      # This is important due to aeron benchmark runtimes validating if an interface that's provided as a connection string exists.
+      # The DPDK interface is not visible to the OS, so the runtime fails startup due to a non-existent interface validation.
       SELECT_INTERFACE=""
     else
-      # Look up the interface we're supposed to use.
-      case ${POD_NAME} in
-        aeron-benchmark-0)
-          LOCAL_IP="$( host "${NODE0_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
-          ;;
-        aeron-benchmark-1)
-          LOCAL_IP="$( host "${NODE1_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
-          ;;
-        *)
-          echo "Error: Could not resolve IP for POD ${POD_NAME}"
-          exit 1
-          ;;
-      esac
-      # Specifically select the interface to use.
       SELECT_INTERFACE="|interface=${LOCAL_IP}/32"
+    fi
 
+    export JVM_OPTS="-Dio.aeron.benchmarks.output.directory=/dev/shm/results \
+    -Dio.aeron.benchmarks.aeron.embedded.media.driver=false \
+    -Dio.aeron.benchmarks.aeron.source.channel=aeron:udp?endpoint=${NODE1_ADDRESS:? Could not find NODE1_ADDRESS}:13000${SELECT_INTERFACE} \
+    -Dio.aeron.benchmarks.aeron.destination.channel=aeron:udp?endpoint=${NODE0_ADDRESS:? Could not find NODE0_ADDRESS}:13001${SELECT_INTERFACE}"
+
+  elif [[ "${BENCHMARK_TYPE}" == *cluster* ]]; then
+    case ${POD_NAME} in
+      aeron-cluster-0)
+        LOCAL_IP="$(host "${NODE0_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
+        ;;
+      aeron-cluster-1)
+        LOCAL_IP="$(host "${NODE1_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
+        ;;
+      aeron-cluster-2)
+        LOCAL_IP="$(host "${NODE2_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
+        ;;
+      aeron-cluster-client)
+        LOCAL_IP="$(host "${CLIENT0_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
+        # Set the egress channel using the local IP, which should be the additional ENI
+        export JVM_OPTS="-Daeron.cluster.egress.channel=aeron:udp?endpoint=${LOCAL_IP}:0"
+        ;;
+      *)
+        echo "Error: Could not resolve IP for POD ${POD_NAME}"
+        exit 1
+        ;;
+    esac
   fi
 
-  export JVM_OPTS="-Dio.aeron.benchmarks.output.directory=/dev/shm/results \
--Dio.aeron.benchmarks.aeron.embedded.media.driver=false \
--Dio.aeron.benchmarks.aeron.source.channel=aeron:udp?endpoint=${NODE1_ADDRESS:? Could not find NODE1_ADDRESS}:13000${SELECT_INTERFACE} \
--Dio.aeron.benchmarks.aeron.destination.channel=aeron:udp?endpoint=${NODE0_ADDRESS:? Could not find NODE0_ADDRESS}:13001${SELECT_INTERFACE}"
 }
 
 #####################################################################################

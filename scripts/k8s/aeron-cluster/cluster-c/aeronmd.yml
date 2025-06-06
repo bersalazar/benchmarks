@@ -1,0 +1,38 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: aeron-cluster
+  labels:
+    aeronmd: c
+spec:
+  template:
+    metadata:
+      # Additional multus network
+      annotations:
+        k8s.v1.cni.cncf.io/networks: aeron-network
+    spec:
+      # Creates the /dev/shm/aeron directory for the aeron driver
+      initContainers:
+        - name: init-container
+          image: public.ecr.aws/docker/library/busybox:stable
+          command: [mkdir]
+          args: [/dev/shm/aeron]
+          volumeMounts:
+            - mountPath: /dev/shm
+              name: shm
+      containers:
+        - name: aeronmd-c
+          imagePullPolicy: Always
+          command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-c-media-driver.sh"]
+          volumeMounts:
+            - name: shm
+              mountPath: /dev/shm
+          resources:
+            limits:
+              cpu: "8"
+              memory: 8G
+        - name: aeron-cluster-node
+          env:
+            - name: BENCHMARK_TYPE
+              value: "aeron-cluster-c"
