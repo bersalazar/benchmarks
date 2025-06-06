@@ -1,0 +1,65 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: aeron-cluster
+  labels:
+    aeronmd: dpdk
+spec:
+  template:
+    spec:
+      volumes:
+        - name: shm
+          emptyDir:
+            medium: Memory
+        - name: hugepage-2mi
+          emptyDir:
+            medium: HugePages
+            sizeLimit: 1Gi
+        - name: low-latency-properties
+          configMap:
+            name: aeron-benchmark-properties
+            items:
+              - key: low-latency-driver.properties
+                path: low-latency-driver.properties
+      containers:
+        - name: aeronmd-dpdk
+          imagePullPolicy: Always
+          args:
+            - "--no-telemetry"
+            - "/opt/aeron-config/low-latency-driver.properties"
+          resources:
+            limits:
+              cpu: "8"
+              memory: 8G
+              # Give us a DPDK NIC through https://github.com/AdaptiveConsulting/k8s-dpdk-mgr
+              intel.com/aws_dpdk: "1"
+          securityContext:
+            capabilities:
+              # Required for DPDK
+              add:
+                - IPC_LOCK
+                - SYS_RAWIO
+                - SYS_ADMIN
+          envFrom:
+            - configMapRef:
+                name: aeron-benchmark-dpdk
+          volumeMounts:
+            - name: shm
+              mountPath: /dev/shm
+            - name: hugepage-2mi
+              mountPath: /hugepages-2Mi
+            - name: shm
+              mountPath: /dev/shm
+            - name: low-latency-properties
+              mountPath: /opt/aeron-config/low-latency-driver.properties
+              subPath: low-latency-driver.properties
+        - name: aeron-cluster-node
+          env:
+            - name: BENCHMARK_TYPE
+              value: "aeron-cluster-dpdk"
+          envFrom:
+            - configMapRef:
+                name: aeron-benchmark-envs
+            - configMapRef:
+                name: aeron-benchmark-dpdk

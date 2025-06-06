@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aeron-cluster-client
+spec:
+  containers:
+    - name: aeronmd-java
+      image: < replace with aeron benchmarks image >
+    - name: aeron-cluster-client
+      image: < replace with aeron benchmarks image >
