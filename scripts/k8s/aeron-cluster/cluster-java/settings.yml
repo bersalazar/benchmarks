@@ -1,0 +1,11 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: aeron-cluster
+  template:
+      containers:
+        - name: aeronmd-java
+          image: < replace with aeron benchmarks image >
+        - name: aeron-cluster-node
+          image: < replace with aeron benchmarks image >
