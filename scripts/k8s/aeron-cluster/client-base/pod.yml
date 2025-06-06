@@ -1,0 +1,107 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aeron-cluster-client
+spec:
+  type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true # This is set so DNS resolves at all times, despite the Readiness check
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: aeron-cluster-client
+  labels:
+    app.kubernetes.io/component: aeron-client
+spec:
+  # The benchmark code runs exactly once and isn't restarted
+  restartPolicy: Never
+  terminationGracePeriodSeconds: 5
+  volumes:
+    - name: hugepage-2mi
+      emptyDir:
+        medium: HugePages-2Mi
+    - name: shm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 2Gi
+    - name: benchmark-properties-volume
+      configMap:
+        name: aeron-benchmark-properties
+        items:
+          - key: benchmark.properties
+            path: benchmark.properties
+    - name: low-latency-properties-volume
+      configMap:
+        name: aeron-benchmark-properties
+        items:
+          - key: low-latency-driver.properties
+            path: low-latency-driver.properties
+    - name: node-properties-volume
+      configMap:
+        name: aeron-benchmark-properties
+        items:
+          - key: node.properties
+            path: node.properties
+  tolerations:
+    # Select our special benchmark nodes
+    - key: "perftest"
+      operator: "Exists"
+  # Select our special benchmark nodes
+  nodeSelector:
+    weareadaptive.com/nodegroup: "perftest"
+
+  containers:
+    - name: aeron-cluster-client
+      imagePullPolicy: Always # Always pull the latest image and ensure the latest benchmark code is used
+
+      volumeMounts:
+        - mountPath: /hugepages-2Mi
+          name: hugepage-2mi
+        - mountPath: /dev/shm
+          name: shm
+        - name: benchmark-properties-volume
+          mountPath: /opt/aeron-benchmarks/scripts/aeron/benchmark.properties
+          subPath: benchmark.properties
+        - name: low-latency-properties-volume
+          mountPath: /opt/aeron-benchmarks/scripts/aeron/low-latency-driver.properties
+          subPath: low-latency-driver.properties
+        - name: node-properties-volume
+          mountPath: /opt/aeron-benchmarks/scripts/aeron/node.properties
+          subPath: node.properties
+
+      resources:
+        limits:
+          cpu: "8"
+          memory: 10G
+          hugepages-2Mi: 1Gi
+      envFrom:
+        - configMapRef:
+            name: aeron-benchmark-envs
+      env:
+      - name: POD_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name
+      - name: POD_INDEX
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.labels['apps.kubernetes.io/pod-index']
+
+    - name: results
+      image: public.ecr.aws/docker/library/busybox:stable
+      command:
+        - "sleep"
+        - "infinity"
+      envFrom:
+        - configMapRef:
+            name: aeron-benchmark-envs
+      volumeMounts:
+        - name: shm
+          mountPath: /dev/shm
+      resources:
+        # Must set limits, as whole Pod must have requests = limits to get into Guarenteed QoS class
+        limits:
+          cpu: "1"
+          memory: 512Mi
