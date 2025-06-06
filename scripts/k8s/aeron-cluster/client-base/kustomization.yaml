@@ -1,0 +1,3 @@
+resources:
+  # Adds the base aeron cluster client deployment
+  - pod.yml
