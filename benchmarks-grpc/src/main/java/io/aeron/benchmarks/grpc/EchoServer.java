@@ -17,17 +17,18 @@ package io.aeron.benchmarks.grpc;
 
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
+import org.agrona.CloseHelper;
 import org.agrona.concurrent.ShutdownSignalBarrier;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Properties;
 
-import static org.agrona.PropertyAction.PRESERVE;
-import static org.agrona.PropertyAction.REPLACE;
-import static io.aeron.benchmarks.grpc.GrpcConfig.getServerBuilder;
 import static io.aeron.benchmarks.PropertiesUtil.loadPropertiesFiles;
 import static io.aeron.benchmarks.PropertiesUtil.mergeWithSystemProperties;
+import static io.aeron.benchmarks.grpc.GrpcConfig.getServerBuilder;
+import static org.agrona.PropertyAction.PRESERVE;
+import static org.agrona.PropertyAction.REPLACE;
 
 public class EchoServer implements AutoCloseable
 {
@@ -56,11 +57,22 @@ public class EchoServer implements AutoCloseable
     {
         mergeWithSystemProperties(PRESERVE, loadPropertiesFiles(new Properties(), REPLACE, args));
 
-        try (EchoServer server = new EchoServer(getServerBuilder()))
+        final ShutdownSignalBarrier signalBarrier = new ShutdownSignalBarrier();
+        try
         {
-            server.start();
+            try (EchoServer server = new EchoServer(getServerBuilder()))
+            {
+                server.start();
 
-            new ShutdownSignalBarrier().await();
+                signalBarrier.await();
+            }
+        }
+        finally
+        {
+            if (signalBarrier instanceof AutoCloseable)
+            {
+                CloseHelper.close((AutoCloseable)signalBarrier);
+            }
         }
     }
 }
