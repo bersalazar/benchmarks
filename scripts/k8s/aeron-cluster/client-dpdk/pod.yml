@@ -21,7 +21,7 @@ spec:
             - SYS_ADMIN
       envFrom:
         - configMapRef:
-            name: aeron-benchmark-envs-dpdk
+            name: aeron-benchmark-dpdk
       resources:
         limits:
           cpu: "8"
