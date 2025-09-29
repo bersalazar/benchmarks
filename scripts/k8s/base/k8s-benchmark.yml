@@ -54,7 +54,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: aeron-benchmark-envs-dpdk
+  name: aeron-benchmark-dpdk
 data:
   AERON_DPDK_THREADS_FROM_CGROUP: "TRUE"
   AERON_DPDK_TX_MEMPOOL_PER_QUEUE: "true"
