@@ -29,6 +29,9 @@ spec:
             - "--no-telemetry"
             - "/opt/aeron-config/low-latency-driver.properties"
           resources:
+            requests:
+              cpu: "8"
+              memory: 8G
             limits:
               cpu: "8"
               memory: 8G

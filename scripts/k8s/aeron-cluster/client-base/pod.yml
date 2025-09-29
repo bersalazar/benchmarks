@@ -72,9 +72,13 @@ spec:
           subPath: node.properties
 
       resources:
+        requests:
+          cpu: "8"
+          memory: 8G
+          hugepages-2Mi: 1Gi
         limits:
           cpu: "8"
-          memory: 10G
+          memory: 8G
           hugepages-2Mi: 1Gi
       envFrom:
         - configMapRef:

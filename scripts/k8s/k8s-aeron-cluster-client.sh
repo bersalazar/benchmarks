@@ -14,9 +14,9 @@ echo "** Sleeping for ${BENCHMARK_PRE_SLEEP} seconds"
 sleep "${BENCHMARK_PRE_SLEEP}"
 
 # Starts the process with affinity set to the first core
-echo "** Starting with echo client base cpu core ${CGROUP_CPUSETS[2]}"
+echo "** Starting with echo client base cpu core ${CGROUP_CPUSETS[1]}"
 # Pass in the benchmark client args
-taskset -c "${CGROUP_CPUSETS[2]}" \
+taskset -c "${CGROUP_CPUSETS[1]}" \
 "${DIR}/../benchmark-runner" \
 "$@" aeron/cluster-client &
 
@@ -27,7 +27,7 @@ f_wait_for_process 'io.aeron.benchmarks.LoadTestRig'
 f_wait_for_thread 'load-test-rig'
 
 # Sets the affinities for high performance threads
-f_pin_thread "load-test-rig" "${CGROUP_CPUSETS[3]}"
+f_pin_thread "load-test-rig" "${CGROUP_CPUSETS[2]}"
 
 # Wait for all background tasks
 fg
