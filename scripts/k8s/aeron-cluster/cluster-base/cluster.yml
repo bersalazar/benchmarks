@@ -109,9 +109,13 @@ spec:
               mountPath: /opt/aeron-benchmarks/scripts/aeron/cluster.properties
               subPath: cluster.properties
           resources:
+            requests:
+              cpu: '11' # caters for pinning each aeron cluster thread to a physical CPU core
+              memory: 8G
+              hugepages-2Mi: 1Gi
             limits:
-              cpu: '8'
-              memory: 10G
+              cpu: '11' # caters for pinning each aeron cluster thread to a physical CPU core
+              memory: 8G
               hugepages-2Mi: 1Gi
 
         - name: results
@@ -128,5 +132,5 @@ spec:
           resources:
             # Must set limits, as whole Pod must have requests = limits to get into Guarenteed QoS class
             limits:
-              cpu: "1"
+              cpu: "256m"
               memory: 512Mi
