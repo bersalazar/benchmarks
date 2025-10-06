@@ -17,7 +17,6 @@ package io.aeron.benchmarks.grpc;
 
 import io.grpc.Server;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
-import org.agrona.CloseHelper;
 import org.agrona.concurrent.ShutdownSignalBarrier;
 
 import java.io.IOException;
@@ -57,22 +56,12 @@ public class EchoServer implements AutoCloseable
     {
         mergeWithSystemProperties(PRESERVE, loadPropertiesFiles(new Properties(), REPLACE, args));
 
-        final ShutdownSignalBarrier signalBarrier = new ShutdownSignalBarrier();
-        try
+        try (ShutdownSignalBarrier signalBarrier = new ShutdownSignalBarrier();
+            EchoServer server = new EchoServer(getServerBuilder()))
         {
-            try (EchoServer server = new EchoServer(getServerBuilder()))
-            {
-                server.start();
+            server.start();
 
-                signalBarrier.await();
-            }
-        }
-        finally
-        {
-            if (signalBarrier instanceof AutoCloseable)
-            {
-                CloseHelper.close((AutoCloseable)signalBarrier);
-            }
+            signalBarrier.await();
         }
     }
 }
