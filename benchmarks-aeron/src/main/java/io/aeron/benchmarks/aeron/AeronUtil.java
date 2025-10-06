@@ -43,7 +43,6 @@ import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.IdleStrategy;
 import org.agrona.concurrent.NanoClock;
 import org.agrona.concurrent.ShutdownSignalBarrier;
-import org.agrona.concurrent.SigInt;
 import org.agrona.concurrent.SystemEpochClock;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.errors.ErrorLogReader;
@@ -54,6 +53,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -425,7 +425,18 @@ public final class AeronUtil
         }
         catch (final ReflectiveOperationException ex)
         {
-            SigInt.register(onSignal);
+            try
+            {
+                final Class<?> sigIntClass = Class.forName("org.agrona.concurrent.SigInt");
+                final Method method = sigIntClass.getMethod("register", Runnable.class);
+                method.invoke(null, onSignal);
+            }
+            catch (final ReflectiveOperationException ex2)
+            {
+                final RuntimeException exception = new RuntimeException(ex);
+                exception.addSuppressed(ex2);
+                throw exception;
+            }
             return null;
         }
     }
