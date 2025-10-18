@@ -24,6 +24,7 @@ import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.BufferClaim;
 import io.aeron.logbuffer.FragmentHandler;
 import org.agrona.concurrent.IdleStrategy;
+import org.agrona.concurrent.ShutdownSignalBarrier;
 import org.agrona.concurrent.SystemNanoClock;
 
 import java.nio.file.Path;
@@ -41,7 +42,6 @@ import static io.aeron.benchmarks.aeron.AeronUtil.connectionTimeoutNs;
 import static io.aeron.benchmarks.aeron.AeronUtil.destinationChannel;
 import static io.aeron.benchmarks.aeron.AeronUtil.destinationStreamId;
 import static io.aeron.benchmarks.aeron.AeronUtil.idleStrategy;
-import static io.aeron.benchmarks.aeron.AeronUtil.installSignalHandler;
 import static io.aeron.benchmarks.aeron.AeronUtil.launchEmbeddedMediaDriverIfConfigured;
 import static io.aeron.benchmarks.aeron.AeronUtil.receiverIndex;
 import static io.aeron.benchmarks.aeron.AeronUtil.sourceChannel;
@@ -153,8 +153,8 @@ public final class EchoNode implements AutoCloseable, Runnable
         final int receiverIndex = AeronUtil.receiverIndex();
 
         final AtomicBoolean running = new AtomicBoolean(true);
-        installSignalHandler(() -> running.set(false));
-        try (EchoNode node = new EchoNode(running))
+        try (ShutdownSignalBarrier shutdownSignalBarrier = new ShutdownSignalBarrier(() -> running.set(false));
+            EchoNode node = new EchoNode(running))
         {
             Thread.currentThread().setName("echo-" + receiverIndex);
 

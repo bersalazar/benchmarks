@@ -41,7 +41,6 @@ import org.agrona.collections.MutableLong;
 import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.IdleStrategy;
 import org.agrona.concurrent.NanoClock;
-import org.agrona.concurrent.SigInt;
 import org.agrona.concurrent.SystemEpochClock;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.errors.ErrorLogReader;
@@ -389,11 +388,6 @@ public final class AeronUtil
         }
 
         return count;
-    }
-
-    public static void installSignalHandler(final Runnable onSignal)
-    {
-        SigInt.register(onSignal);
     }
 
     public static void yieldUninterruptedly()

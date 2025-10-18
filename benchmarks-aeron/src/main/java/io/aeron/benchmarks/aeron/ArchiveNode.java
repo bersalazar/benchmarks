@@ -20,6 +20,7 @@ import io.aeron.ExclusivePublication;
 import io.aeron.Subscription;
 import io.aeron.archive.client.AeronArchive;
 import io.aeron.benchmarks.Configuration;
+import org.agrona.concurrent.ShutdownSignalBarrier;
 import org.agrona.concurrent.SystemNanoClock;
 
 import java.nio.file.Path;
@@ -36,7 +37,6 @@ import static io.aeron.benchmarks.aeron.AeronUtil.awaitRecordingStart;
 import static io.aeron.benchmarks.aeron.AeronUtil.connectionTimeoutNs;
 import static io.aeron.benchmarks.aeron.AeronUtil.destinationChannel;
 import static io.aeron.benchmarks.aeron.AeronUtil.destinationStreamId;
-import static io.aeron.benchmarks.aeron.AeronUtil.installSignalHandler;
 import static io.aeron.benchmarks.aeron.AeronUtil.launchArchivingMediaDriver;
 import static io.aeron.benchmarks.aeron.AeronUtil.pipeMessages;
 import static io.aeron.benchmarks.aeron.AeronUtil.recordChannel;
@@ -115,8 +115,8 @@ public final class ArchiveNode implements AutoCloseable, Runnable
         final Path outputDir = Configuration.resolveLogsDir();
 
         final AtomicBoolean running = new AtomicBoolean(true);
-        installSignalHandler(() -> running.set(false));
-        try (ArchiveNode server = new ArchiveNode(running))
+        try (ShutdownSignalBarrier shutdownSignalBarrier = new ShutdownSignalBarrier(() -> running.set(false));
+            ArchiveNode server = new ArchiveNode(running))
         {
             // wait for all background threads to be started before pinning the main thread to a dedicated core
             Thread.currentThread().setName("archive-node");

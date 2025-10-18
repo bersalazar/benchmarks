@@ -27,6 +27,7 @@ import io.aeron.driver.MediaDriver;
 import io.aeron.logbuffer.BufferClaim;
 import io.aeron.logbuffer.FragmentHandler;
 import org.agrona.concurrent.IdleStrategy;
+import org.agrona.concurrent.ShutdownSignalBarrier;
 import org.agrona.concurrent.SystemNanoClock;
 
 import java.nio.file.Path;
@@ -44,7 +45,6 @@ import static io.aeron.benchmarks.aeron.AeronUtil.checkPublicationResult;
 import static io.aeron.benchmarks.aeron.AeronUtil.connectionTimeoutNs;
 import static io.aeron.benchmarks.aeron.AeronUtil.findLastRecordingId;
 import static io.aeron.benchmarks.aeron.AeronUtil.idleStrategy;
-import static io.aeron.benchmarks.aeron.AeronUtil.installSignalHandler;
 import static io.aeron.benchmarks.aeron.AeronUtil.launchEmbeddedMediaDriverIfConfigured;
 import static io.aeron.benchmarks.aeron.AeronUtil.receiverIndex;
 import static io.aeron.benchmarks.aeron.AeronUtil.recordChannel;
@@ -179,8 +179,8 @@ public final class ReplayNode implements AutoCloseable, Runnable
         final int receiverIndex = receiverIndex();
 
         final AtomicBoolean running = new AtomicBoolean(true);
-        installSignalHandler(() -> running.set(false));
-        try (ReplayNode server = new ReplayNode(running))
+        try (ShutdownSignalBarrier shutdownSignalBarrier = new ShutdownSignalBarrier(() -> running.set(false));
+            ReplayNode server = new ReplayNode(running))
         {
             // wait for all background threads to be started before pinning the main thread to a dedicated core
             Thread.currentThread().setName("replay-" + receiverIndex);

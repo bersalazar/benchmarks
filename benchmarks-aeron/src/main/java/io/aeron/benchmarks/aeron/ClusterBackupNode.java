@@ -43,32 +43,34 @@ public final class ClusterBackupNode
             .deleteArchiveOnStart(true)
             .recordingEventsEnabled(false);
 
-        final ShutdownSignalBarrier signalBarrier = new ShutdownSignalBarrier();
-        final ClusterBackup.Context clusterBackupContext = new ClusterBackup.Context()
-            .deleteDirOnStart(true)
-            .errorHandler(printingErrorHandler("cluster-backup"))
-            .aeronDirectoryName(archiveContext.aeronDirectoryName())
-            .markFileDir(new File(archiveContext.aeronDirectoryName()))
-            .epochClock(SystemEpochClock.INSTANCE)
-            .terminationHook(signalBarrier::signalAll);
-
-        try (Archive archive = Archive.launch(archiveContext);
-            ClusterBackup clusterBackup = ClusterBackup.launch(clusterBackupContext))
+        try (ShutdownSignalBarrier signalBarrier = new ShutdownSignalBarrier())
         {
-            signalBarrier.await();
+            final ClusterBackup.Context clusterBackupContext = new ClusterBackup.Context()
+                .deleteDirOnStart(true)
+                .errorHandler(printingErrorHandler("cluster-backup"))
+                .aeronDirectoryName(archiveContext.aeronDirectoryName())
+                .markFileDir(new File(archiveContext.aeronDirectoryName()))
+                .epochClock(SystemEpochClock.INSTANCE)
+                .terminationHook(signalBarrier::signalAll);
 
-            final String prefix = "cluster-backup-node-";
-            AeronUtil.dumpClusterErrors(
-                logsDir.resolve(prefix + "backup-errors.txt"),
-                clusterBackup.context().clusterDir(),
-                ClusterMarkFile.FILENAME,
-                ClusterMarkFile.LINK_FILENAME);
-            AeronUtil.dumpArchiveErrors(
-                archive.context().archiveDir(), logsDir.resolve(prefix + "archive-errors.txt"));
-            AeronUtil.dumpAeronStats(
-                archive.context().aeron().context().cncFile(),
-                logsDir.resolve(prefix + "aeron-stat.txt"),
-                logsDir.resolve(prefix + "errors.txt"));
+            try (Archive archive = Archive.launch(archiveContext);
+                ClusterBackup clusterBackup = ClusterBackup.launch(clusterBackupContext))
+            {
+                signalBarrier.await();
+
+                final String prefix = "cluster-backup-node-";
+                AeronUtil.dumpClusterErrors(
+                    logsDir.resolve(prefix + "backup-errors.txt"),
+                    clusterBackup.context().clusterDir(),
+                    ClusterMarkFile.FILENAME,
+                    ClusterMarkFile.LINK_FILENAME);
+                AeronUtil.dumpArchiveErrors(
+                    archive.context().archiveDir(), logsDir.resolve(prefix + "archive-errors.txt"));
+                AeronUtil.dumpAeronStats(
+                    archive.context().aeron().context().cncFile(),
+                    logsDir.resolve(prefix + "aeron-stat.txt"),
+                    logsDir.resolve(prefix + "errors.txt"));
+            }
         }
     }
 }
