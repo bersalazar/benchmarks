@@ -115,30 +115,23 @@ public final class ArchiveNode implements AutoCloseable, Runnable
         final Path outputDir = Configuration.resolveLogsDir();
 
         final AtomicBoolean running = new AtomicBoolean(true);
-        final Object signalHandler = installSignalHandler(() -> running.set(false));
-        try
+        installSignalHandler(() -> running.set(false));
+        try (ArchiveNode server = new ArchiveNode(running))
         {
-            try (ArchiveNode server = new ArchiveNode(running))
-            {
-                // wait for all background threads to be started before pinning the main thread to a dedicated core
-                Thread.currentThread().setName("archive-node");
+            // wait for all background threads to be started before pinning the main thread to a dedicated core
+            Thread.currentThread().setName("archive-node");
 
-                server.run();
+            server.run();
 
-                final String prefix = "archive-node-";
-                AeronUtil.dumpArchiveErrors(
-                    server.archivingMediaDriver.archive.context().archiveDir(),
-                    outputDir.resolve(prefix + "archive-errors.txt"));
-                AeronUtil.dumpAeronStats(
-                    server.archivingMediaDriver.archive.context().aeron().context().cncFile(),
-                    outputDir.resolve(prefix + "aeron-stat.txt"),
-                    outputDir.resolve(prefix + "errors.txt")
-                );
-            }
-        }
-        finally
-        {
-            AeronUtil.close(signalHandler);
+            final String prefix = "archive-node-";
+            AeronUtil.dumpArchiveErrors(
+                server.archivingMediaDriver.archive.context().archiveDir(),
+                outputDir.resolve(prefix + "archive-errors.txt"));
+            AeronUtil.dumpAeronStats(
+                server.archivingMediaDriver.archive.context().aeron().context().cncFile(),
+                outputDir.resolve(prefix + "aeron-stat.txt"),
+                outputDir.resolve(prefix + "errors.txt")
+            );
         }
     }
 }

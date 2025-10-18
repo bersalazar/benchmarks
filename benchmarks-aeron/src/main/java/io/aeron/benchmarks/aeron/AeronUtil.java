@@ -32,7 +32,6 @@ import io.aeron.exceptions.AeronException;
 import io.aeron.logbuffer.BufferClaim;
 import io.aeron.logbuffer.FragmentHandler;
 import org.agrona.BitUtil;
-import org.agrona.CloseHelper;
 import org.agrona.ErrorHandler;
 import org.agrona.IoUtil;
 import org.agrona.MutableDirectBuffer;
@@ -42,7 +41,7 @@ import org.agrona.collections.MutableLong;
 import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.IdleStrategy;
 import org.agrona.concurrent.NanoClock;
-import org.agrona.concurrent.ShutdownSignalBarrier;
+import org.agrona.concurrent.SigInt;
 import org.agrona.concurrent.SystemEpochClock;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.errors.ErrorLogReader;
@@ -52,9 +51,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -395,58 +391,9 @@ public final class AeronUtil
         return count;
     }
 
-    public static Object installSignalHandler(final Runnable onSignal)
+    public static void installSignalHandler(final Runnable onSignal)
     {
-        try
-        {
-            final Class<?> signalHandlerClass =
-                Class.forName("org.agrona.concurrent.ShutdownSignalBarrier.SignalHandler");
-            final Constructor<ShutdownSignalBarrier> constructor =
-                ShutdownSignalBarrier.class.getConstructor(signalHandlerClass);
-            final Object signalHandler = Proxy.newProxyInstance(
-                signalHandlerClass.getClassLoader(),
-                new Class[]{ signalHandlerClass },
-                (proxy, method, args) ->
-                {
-                    if (method.getDeclaringClass() == Object.class)
-                    {
-                        if ("toString".equals(method.getName()))
-                        {
-                            return onSignal.toString();
-                        }
-                    }
-                    else if (method.getDeclaringClass() == signalHandlerClass)
-                    {
-                        onSignal.run();
-                    }
-                    return null;
-                });
-            return constructor.newInstance(signalHandler);
-        }
-        catch (final ReflectiveOperationException ex)
-        {
-            try
-            {
-                final Class<?> sigIntClass = Class.forName("org.agrona.concurrent.SigInt");
-                final Method method = sigIntClass.getMethod("register", Runnable.class);
-                method.invoke(null, onSignal);
-            }
-            catch (final ReflectiveOperationException ex2)
-            {
-                final RuntimeException exception = new RuntimeException(ex);
-                exception.addSuppressed(ex2);
-                throw exception;
-            }
-            return null;
-        }
-    }
-
-    public static void close(final Object closeable)
-    {
-        if (closeable instanceof AutoCloseable)
-        {
-            CloseHelper.close((AutoCloseable)closeable);
-        }
+        SigInt.register(onSignal);
     }
 
     public static void yieldUninterruptedly()

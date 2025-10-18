@@ -153,25 +153,18 @@ public final class EchoNode implements AutoCloseable, Runnable
         final int receiverIndex = AeronUtil.receiverIndex();
 
         final AtomicBoolean running = new AtomicBoolean(true);
-        final Object signalHandler = installSignalHandler(() -> running.set(false));
-        try
+        installSignalHandler(() -> running.set(false));
+        try (EchoNode node = new EchoNode(running))
         {
-            try (EchoNode node = new EchoNode(running))
-            {
-                Thread.currentThread().setName("echo-" + receiverIndex);
+            Thread.currentThread().setName("echo-" + receiverIndex);
 
-                node.run();
+            node.run();
 
-                final String prefix = "echo-node-" + receiverIndex + "-";
-                AeronUtil.dumpAeronStats(
-                    node.aeron.context().cncFile(),
-                    outputDir.resolve(prefix + "aeron-stat.txt"),
-                    outputDir.resolve(prefix + "errors.txt"));
-            }
-        }
-        finally
-        {
-            AeronUtil.close(signalHandler);
+            final String prefix = "echo-node-" + receiverIndex + "-";
+            AeronUtil.dumpAeronStats(
+                node.aeron.context().cncFile(),
+                outputDir.resolve(prefix + "aeron-stat.txt"),
+                outputDir.resolve(prefix + "errors.txt"));
         }
     }
 }

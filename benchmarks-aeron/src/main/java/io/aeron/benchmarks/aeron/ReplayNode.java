@@ -179,26 +179,19 @@ public final class ReplayNode implements AutoCloseable, Runnable
         final int receiverIndex = receiverIndex();
 
         final AtomicBoolean running = new AtomicBoolean(true);
-        final Object signalHandler = installSignalHandler(() -> running.set(false));
-        try
+        installSignalHandler(() -> running.set(false));
+        try (ReplayNode server = new ReplayNode(running))
         {
-            try (ReplayNode server = new ReplayNode(running))
-            {
-                // wait for all background threads to be started before pinning the main thread to a dedicated core
-                Thread.currentThread().setName("replay-" + receiverIndex);
+            // wait for all background threads to be started before pinning the main thread to a dedicated core
+            Thread.currentThread().setName("replay-" + receiverIndex);
 
-                server.run();
+            server.run();
 
-                final String prefix = "replay-node-" + receiverIndex + "-";
-                AeronUtil.dumpAeronStats(
-                    server.aeronArchive.context().aeron().context().cncFile(),
-                    outputDir.resolve(prefix + "aeron-stat.txt"),
-                    outputDir.resolve(prefix + "errors.txt"));
-            }
-        }
-        finally
-        {
-            AeronUtil.close(signalHandler);
+            final String prefix = "replay-node-" + receiverIndex + "-";
+            AeronUtil.dumpAeronStats(
+                server.aeronArchive.context().aeron().context().cncFile(),
+                outputDir.resolve(prefix + "aeron-stat.txt"),
+                outputDir.resolve(prefix + "errors.txt"));
         }
     }
 }

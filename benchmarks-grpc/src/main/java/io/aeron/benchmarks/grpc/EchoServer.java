@@ -56,8 +56,8 @@ public class EchoServer implements AutoCloseable
     {
         mergeWithSystemProperties(PRESERVE, loadPropertiesFiles(new Properties(), REPLACE, args));
 
-        try (ShutdownSignalBarrier signalBarrier = new ShutdownSignalBarrier();
-            EchoServer server = new EchoServer(getServerBuilder()))
+        final ShutdownSignalBarrier signalBarrier = new ShutdownSignalBarrier();
+        try (EchoServer server = new EchoServer(getServerBuilder()))
         {
             server.start();
 
