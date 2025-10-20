@@ -26,10 +26,10 @@ spec:
         name: data-volume-claim
       spec:
         accessModes: [ReadWriteOnce]
-        storageClassName: gp3
+        storageClassName: io2
         resources:
           requests:
-            storage: 1Gi
+            storage: 100Gi
   template:
     metadata:
       annotations: {}
@@ -108,6 +108,8 @@ spec:
             - name: cluster-properties-volume
               mountPath: /opt/aeron-benchmarks/scripts/aeron/cluster.properties
               subPath: cluster.properties
+            - name: data-volume-claim
+              mountPath: /aeron-data
           resources:
             requests:
               cpu: '11' # caters for pinning each aeron cluster thread to a physical CPU core

@@ -57,8 +57,8 @@ data:
     io.aeron.benchmarks.output.directory=/dev/shm/results
   node.properties: |
     aeron.dir=/dev/shm/aeron
-    aeron.cluster.dir=cluster/node/cluster
-    aeron.archive.dir=cluster/node/archive
+    aeron.cluster.dir=/aeron-data/cluster
+    aeron.archive.dir=/aeron-data/archive
   benchmark.properties: |
     io.aeron.benchmarks.message.rate=100
     io.aeron.benchmarks.output.file=bench_out.txt
@@ -66,21 +66,27 @@ data:
     aeron.cluster.ingress.channel=aeron:udp
     aeron.cluster.ingress.endpoints=0=aeron-cluster-0.aeron-cluster:20000,1=aeron-cluster-1.aeron-cluster:20000,2=aeron-cluster-2.aeron-cluster:20000
   low-latency-driver.properties: |
-    aeron.dir=/dev/shm/aeron
-    aeron.dir.delete.on.start=true
-    aeron.dir.delete.on.shutdown=true
-    aeron.print.configuration=true
-    aeron.term.buffer.sparse.file=true
-    aeron.pre.touch.mapped.memory=false
-    aeron.perform.storage.checks=false
-    aeron.socket.so_sndbuf=2m
-    aeron.socket.so_rcvbuf=2m
-    aeron.rcv.initial.window.length=2m
-    aeron.threading.mode=DEDICATED
     aeron.conductor.idle.strategy=noop
-    aeron.sender.idle.strategy=noop
+    aeron.dir.delete.on.shutdown=true
+    aeron.dir.delete.on.start=true
+    aeron.dir=/dev/shm/aeron
+    aeron.driver.timeout=30000
+    aeron.perform.storage.checks=false
+    aeron.pre.touch.mapped.memory=false
+    aeron.print.configuration=true
+    aeron.rcv.initial.window.length=2m
     aeron.receiver.idle.strategy=noop
+    aeron.sender.idle.strategy=noop
+    aeron.socket.so_rcvbuf=2m
+    aeron.socket.so_sndbuf=2m
     aeron.spies.simulate.connection=true
+    aeron.term.buffer.sparse.file=true
+    aeron.threading.mode=DEDICATED
     aeron.use.windows.high.res.timer=true
     agrona.disable.bounds.checks=true
-    aeron.driver.timeout=30000
+
+    aeron.ipc.mtu.length=8k
+    aeron.mtu.length=8k
+    aeron.network.publication.max.messages.per.send=2
+    aeron.receiver.io.vector.capacity=2
+    aeron.sender.io.vector.capacity=2

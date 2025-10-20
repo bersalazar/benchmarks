@@ -39,9 +39,9 @@ spec:
         - "k8s/k8s-aeron-cluster-client.sh"
       args:
         - "--output-file"
-        - "clusterclientc"
+        - "aeronclusterc"
         - "--message-rate"
-        - "100K"
+        - "101K"
         - "--message-length"
         - "288"
         - "--iterations"
