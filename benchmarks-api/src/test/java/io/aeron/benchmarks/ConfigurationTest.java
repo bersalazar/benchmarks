@@ -600,6 +600,35 @@ class ConfigurationTest
         assertTrue(configuration.outputFileNamePrefix().startsWith("my-out-file"));
     }
 
+    @Test
+    void resolveLogsDirThrowsNullPointerExceptionIfLogsDirPropertyIsNotSet()
+    {
+        System.clearProperty(OUTPUT_DIRECTORY_PROP_NAME);
+
+        assertThrowsExactly(NullPointerException.class, Configuration::resolveLogsDir);
+    }
+
+    @Test
+    void resolveLogsDirThrowsIllegalArgumentExceptionIfLogsDirPointsToAFile(@TempDir final Path temp) throws IOException
+    {
+        final Path file = temp.resolve("logs");
+        Files.createFile(file);
+        assertTrue(Files.exists(file));
+        assertTrue(Files.isRegularFile(file));
+
+        System.setProperty(OUTPUT_DIRECTORY_PROP_NAME, file.getParent().toAbsolutePath().toString());
+        try
+        {
+            final IllegalArgumentException exception =
+                assertThrowsExactly(IllegalArgumentException.class, Configuration::resolveLogsDir);
+            assertEquals("logs directory path is not a directory: " + file, exception.getMessage());
+        }
+        finally
+        {
+            System.clearProperty(OUTPUT_DIRECTORY_PROP_NAME);
+        }
+    }
+
     private void clearConfigProperties()
     {
         Stream.of(

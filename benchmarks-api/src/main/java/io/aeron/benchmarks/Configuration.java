@@ -719,14 +719,22 @@ public final class Configuration
         final Path directory = Paths.get(path).resolve(LOGS_DIR);
         if (!Files.exists(directory))
         {
-            try
+            if (!directory.toFile().mkdirs() && !Files.exists(directory))
             {
-                return Files.createDirectories(directory);
+                try
+                {
+                    Files.createDirectories(directory);
+                }
+                catch (final IOException e)
+                {
+                    throw new UncheckedIOException(e);
+                }
             }
-            catch (final IOException e)
-            {
-                throw new UncheckedIOException(e);
-            }
+        }
+
+        if (!Files.isDirectory(directory))
+        {
+            throw new IllegalArgumentException("logs directory path is not a directory: " + directory);
         }
         return directory;
     }
