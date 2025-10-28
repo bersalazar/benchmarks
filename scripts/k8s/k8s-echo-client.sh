@@ -21,7 +21,9 @@ taskset -c "${CGROUP_CPUSETS[1]}" \
 f_wait_for_process 'io.aeron.benchmarks.LoadTestRig'
 
 # Additional wait, because sometimes the thread isn't ready yet :-(
-sleep 2
+# This is because load-test-rig thread starts once a connection to echo-server has been established.
+# Waiting helps as the echo-server pod's container may not be ready.
+f_wait_for_thread 'load-test-rig'
 
 # Sets the affinities for high performance threads
 f_pin_thread "load-test-rig" "${CGROUP_CPUSETS[2]}"
