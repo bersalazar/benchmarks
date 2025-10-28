@@ -10,7 +10,7 @@ spec:
       # These are options passed to the benchmark-runner script
       args:
         - "--output-file"
-        - "aeronechoc"
+        - "echo_c_source=caf"
         - "--message-rate"
         - "101K"
         - "--message-length"
