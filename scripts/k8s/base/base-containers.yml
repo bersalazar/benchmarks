@@ -24,6 +24,8 @@ spec:
         items:
           - key: low-latency-driver.properties
             path: low-latency-driver.properties
+    - name: aeron-md-config-dir
+      emptyDir: {}
   containers:
     # Media driver containers come from the Kustomization files in the scenarios
     - name: benchmark
@@ -65,3 +67,15 @@ spec:
         limits:
           cpu: "1"
           memory: 512Mi
+  initContainers:
+    - name: aeron-k8s-bootstrap
+      image: ghcr.io/bersalazar/aeron-k8s-bootstrap/aeron-k8s-bootstrap:latest
+      # Don't pull, as we pre-build/pre-load the images for CI
+      imagePullPolicy: Never
+      env:
+        # example config to alter discovery process goes here
+        - name: AERON_MD_DISCOVERY_PORT
+          value: "8050"
+      volumeMounts:
+        - name: aeron-md-config-dir
+          mountPath: /etc/aeron

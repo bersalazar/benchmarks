@@ -7,6 +7,7 @@ metadata:
     aeronmd: java
 spec:
   containers:
+    - name: 
     - name: aeronmd-c
       imagePullPolicy: Always
       command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-c-media-driver.sh"]

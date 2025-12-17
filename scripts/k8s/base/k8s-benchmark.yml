@@ -63,14 +63,50 @@ data:
   AERON_DPDK_RX_MEMPOOL_OPS: "ring_mp_mc"
   AERON_DPDK_RX_MEMPOOL_CACHE_SIZE: "512"
 ---
+# Permission to look up Pod details
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: aeron-benchmark
+  namespace: aeron-benchmark
+rules:
+  # Allow reading pods to find bootstrap neighbors
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list]
+---
+# Serviceaccount for aeron-k8s-bootstrap to run under
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aeron-benchmark-sa
+---
+# Bind the previously created role to the aeron-k8s-bootstrap service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: aeron-benchmark
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: aeron-benchmark
+subjects:
+  - kind: ServiceAccount
+    name: aeron-benchmark-sa
+    namespace: aeron-benchmark
+---
 apiVersion: v1
 kind: Pod
 metadata:
   name: aeron-benchmark-0
-# Populated throught base-containers.yml kustomization
+spec:
+  serviceAccountName: aeron-benchmark-sa
+# Populated through base-containers.yml kustomization
 ---
 apiVersion: v1
 kind: Pod
 metadata:
   name: aeron-benchmark-1
-# Populated throught base-containers.yml kustomization
+spec:
+  serviceAccountName: aeron-benchmark-sa
+# Populated through base-containers.yml kustomization
