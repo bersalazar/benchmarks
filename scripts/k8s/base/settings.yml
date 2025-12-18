@@ -7,13 +7,13 @@ metadata:
 spec:
   tolerations:
     # Select our special benchmark nodes
-    - key: "dpdk"
+    - key: "perftest"
       operator: "Exists"
   # Select our special benchmark nodes
   nodeSelector:
-    purpose: "dpdk"
+    weareadaptive.com/nodegroup: "perftest"
 
   containers:
     - name: benchmark
-      image: "< Ref to benchmark container >"
-      imagePullPolicy: Always
+      #image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:40083bb9c9a2321ae850a08e8117c341eca96283"
+      image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:bds"

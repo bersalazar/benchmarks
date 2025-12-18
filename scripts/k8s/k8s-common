@@ -88,32 +88,35 @@ function f_set_jvm_opts() {
   # If this is not a DPDK test...
   if [[ "${BENCHMARK_TYPE}" == *echo* ]]; then
     # Look up the interface we're supposed to use.
-    case ${POD_NAME} in
-      aeron-benchmark-0)
-        LOCAL_IP="$( host "${NODE0_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
-        ;;
-      aeron-benchmark-1)
-        LOCAL_IP="$( host "${NODE1_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
-        ;;
-      *)
-        echo "Error: Could not resolve IP for POD ${POD_NAME}"
-        exit 1
-        ;;
-    esac
 
     if [[ "${BENCHMARK_TYPE}" == *dpdk* ]]; then
+      # For DPDK tests, we need to get the local IP from the pod DNS name
+      case ${POD_NAME} in
+        aeron-benchmark-0)
+          LOCAL_IP="$( host "${NODE0_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
+          ;;
+        aeron-benchmark-1)
+          LOCAL_IP="$( host "${NODE1_ADDRESS}" | grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' )"
+          ;;
+        *)
+          echo "Error: Could not resolve IP for POD ${POD_NAME}"
+          exit 1
+          ;;
+      esac
+
       # Don't select an interface if benchmark type is DPDK.
       # This is important due to aeron benchmark runtimes validating if an interface that's provided as a connection string exists.
       # The DPDK interface is not visible to the OS, so the runtime fails startup due to a non-existent interface validation.
       SELECT_INTERFACE=""
     else
+      LOCAL_IP="$(ip -4 -json addr show "${INTERFACE}" | jq -r '.[] | .addr_info[] | select(.family=="inet") | .local')"
       SELECT_INTERFACE="|interface=${LOCAL_IP}/32"
     fi
 
     export JVM_OPTS="-Dio.aeron.benchmarks.output.directory=/dev/shm/results \
     -Dio.aeron.benchmarks.aeron.embedded.media.driver=false \
-    -Dio.aeron.benchmarks.aeron.source.channel=aeron:udp?endpoint=${NODE1_ADDRESS:? Could not find NODE1_ADDRESS}:13000${SELECT_INTERFACE} \
-    -Dio.aeron.benchmarks.aeron.destination.channel=aeron:udp?endpoint=${NODE0_ADDRESS:? Could not find NODE0_ADDRESS}:13001${SELECT_INTERFACE}"
+    -Dio.aeron.benchmarks.aeron.source.channel=aeron:udp?endpoint=aeron-benchmark-1.aeron-benchmark.aeron:13000${SELECT_INTERFACE} \
+    -Dio.aeron.benchmarks.aeron.destination.channel=aeron:udp?endpoint=aeron-benchmark-0.aeron-benchmark.aeron:13001${SELECT_INTERFACE}"
 
   elif [[ "${BENCHMARK_TYPE}" == *cluster* ]]; then
     case ${POD_NAME} in
@@ -180,7 +183,7 @@ cd "${BENCHMARKS_PATH:? Please set BENCHMARKS_PATH}/scripts"
 ./collect-environment-info "${TEST_OUTPUT_PATH}"
 
 # Verify we can get DNS records for the pods
-f_wait_for_dns
+#f_wait_for_dns
 # Set up our test variables
 f_set_jvm_opts
 

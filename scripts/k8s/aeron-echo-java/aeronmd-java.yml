@@ -9,10 +9,15 @@ spec:
   containers:
     - name: aeronmd-java
       imagePullPolicy: Always
-      command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-java-media-driver.sh"]
+      #command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-java-media-driver.sh"]
+      args:
+        - -Daeron.dir=/dev/shm/aeron # otherwise it defaults to /dev/shm/aeron-<user>
+        - /opt/aeron-config/bootstrap.properties
       volumeMounts:
         - name: shm
           mountPath: /dev/shm
+        - name: aeron-md-config-dir
+          mountPath: /opt/aeron-config
       resources:
         limits:
           cpu: "8"

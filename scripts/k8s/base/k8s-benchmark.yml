@@ -50,6 +50,7 @@ data:
   TEST_OUTPUT_PATH: /dev/shm/results
   NODE0_ADDRESS: aeron-benchmark-0.aeron-benchmark-md
   NODE1_ADDRESS: aeron-benchmark-1.aeron-benchmark-md
+  INTERFACE: net1
 ---
 apiVersion: v1
 kind: ConfigMap

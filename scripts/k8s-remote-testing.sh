@@ -226,26 +226,15 @@ else
   if [[ "${TEST_TO_RUN}" =~ .*-dpdk$ ]]; then
     AERON_0_MD_IP="$(kubectl -n "${K8S_NAMESPACE}" exec -it aeron-benchmark-0 -c aeronmd-dpdk -- bash -c 'echo ${PCIDEVICE_INTEL_COM_AWS_DPDK_INFO}' | jq -r '.. | ."IPV4_ADDRESS"? | select(. != null)')"
     AERON_CLIENT_MD_IP="$(kubectl -n "${K8S_NAMESPACE}" exec -it aeron-benchmark-1 -c aeronmd-dpdk -- bash -c 'echo ${PCIDEVICE_INTEL_COM_AWS_DPDK_INFO}' | jq -r '.. | ."IPV4_ADDRESS"? | select(. != null)')"
-  # Java Media Driver
-  elif [[ "${TEST_TO_RUN}" =~ .*-java$ ]]; then
-    AERON_0_MD_IP="$(kubectl -n "${K8S_NAMESPACE}" exec aeron-benchmark-0  -c aeronmd-java -- bash -c "ip -4 -json addr show ${INTERFACE} |   jq -r '.[] | .addr_info[] | select(.family == \"inet\") | .local'")"
-    AERON_CLIENT_MD_IP="$(kubectl -n "${K8S_NAMESPACE}" exec aeron-benchmark-1  -c aeronmd-java -- bash -c "ip -4 -json addr show ${INTERFACE} |   jq -r '.[] | .addr_info[] | select(.family == \"inet\") | .local'")"
-  elif [[ "${TEST_TO_RUN}" =~ .*-c$ ]]; then
-    AERON_0_MD_IP="$(kubectl -n "${K8S_NAMESPACE}" exec aeron-benchmark-0  -c aeronmd-c -- bash -c "ip -4 -json addr show ${INTERFACE} |   jq -r '.[] | .addr_info[] | select(.family == \"inet\") | .local'")"
-    AERON_CLIENT_MD_IP="$(kubectl -n "${K8S_NAMESPACE}" exec aeron-benchmark-1  -c aeronmd-c -- bash -c "ip -4 -json addr show ${INTERFACE} |   jq -r '.[] | .addr_info[] | select(.family == \"inet\") | .local'")"
-  else
-    f_log "Media driver config not found"
-    exit 1
-  fi
 
-  f_log "Found Media driver IPs:"
-  echo "aeron-benchmark-0: ${AERON_0_MD_IP}"
-  echo "aeron-benchmark-1: ${AERON_CLIENT_MD_IP}"
+    f_log "Found Media driver IPs:"
+    echo "aeron-benchmark-0: ${AERON_0_MD_IP}"
+    echo "aeron-benchmark-1: ${AERON_CLIENT_MD_IP}"
 
-  # Generate endpoint slice with IPs
-  # Because we can use interfaces that have no obvious IPs, we need to have a way to generate DNS records for the test.
-  f_log "Generating endpointslice with DNS for media driver IPs"
-  ENDPOINT_SLICE=$(cat <<EOF
+    # Generate endpoint slice with IPs
+    # Because we can use interfaces that have no obvious IPs, we need to have a way to generate DNS records for the test.
+    f_log "Generating endpointslice with DNS for media driver IPs"
+    ENDPOINT_SLICE=$(cat <<EOF
 ---
 apiVersion: discovery.k8s.io/v1
 kind: EndpointSlice
@@ -268,8 +257,9 @@ endpoints:
     hostname: aeron-benchmark-1
 EOF
 )
-  # Inject endpoint slice
-  echo "${ENDPOINT_SLICE}" | kubectl -n "${K8S_NAMESPACE}" apply -f -
+    # Inject endpoint slice
+    echo "${ENDPOINT_SLICE}" | kubectl -n "${K8S_NAMESPACE}" apply -f -
+  fi
 
   # When the benchmark finishes, the benchmark containers stop, generating a NotReady condition
   f_log "Waiting for benchmarks to finish"

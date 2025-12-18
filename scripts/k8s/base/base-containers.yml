@@ -5,9 +5,10 @@ metadata:
   name: all
   labels:
     app.kubernetes.io/name: aeron-benchmark
+    aeron.io/media-driver: "true"
 spec:
   # The benchmark code runs exactly once and isn't restarted
-  restartPolicy: Never
+  restartPolicy: OnFailure
   terminationGracePeriodSeconds: 5
   volumes:
     - name: hugepage-2mi
@@ -70,12 +71,14 @@ spec:
   initContainers:
     - name: aeron-k8s-bootstrap
       image: ghcr.io/bersalazar/aeron-k8s-bootstrap/aeron-k8s-bootstrap:latest
-      # Don't pull, as we pre-build/pre-load the images for CI
-      imagePullPolicy: Never
+      imagePullPolicy: IfNotPresent
       env:
         # example config to alter discovery process goes here
         - name: AERON_MD_DISCOVERY_PORT
           value: "8050"
+        - name: AERON_MD_BOOTSTRAP_PATH
+          value: /opt/aeron-config/bootstrap.properties
+
       volumeMounts:
         - name: aeron-md-config-dir
-          mountPath: /etc/aeron
+          mountPath: /opt/aeron-config
