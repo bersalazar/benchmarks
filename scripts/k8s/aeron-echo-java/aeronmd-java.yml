@@ -6,13 +6,35 @@ metadata:
   labels:
     aeronmd: java
 spec:
+  initContainers:
+    - name: aeron-k8s-bootstrap
+      image: 116332603969.dkr.ecr.eu-west-1.amazonaws.com/aeron-bootstrap:latest
+      # Don't pull, as we pre-build/pre-load the images for CI
+      imagePullPolicy: Always
+      env:
+        # example config to alter discovery process goes here
+        - name: AERON_MD_DISCOVERY_PORT
+          value: "8050"
+        - name: AERON_MD_BOOTSTRAP_PATH
+          value: /opt/aeron-md-config/bootstrap.properties
+      volumeMounts:
+        - name: aeron-md-config-dir
+          mountPath: /opt/aeron-md-config
   containers:
     - name: aeronmd-java
       imagePullPolicy: Always
-      command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-java-media-driver.sh"]
+      #command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-java-media-driver.sh"]
+      args:
+        - /opt/aeron-md-config/bootstrap.properties
+        - /opt/aeron-config/low-latency-driver.properties
+        - -Daeron.dir=/dev/shm/aeron
       volumeMounts:
         - name: shm
           mountPath: /dev/shm
+        - name: aeron-md-config-dir
+          mountPath: /opt/aeron-md-config
+        - name: config-volume
+          mountPath: /opt/aeron-config
       resources:
         limits:
           cpu: "8"
