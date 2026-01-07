@@ -3,9 +3,11 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: aeron-cluster
+spec:
   template:
+    spec:
       containers:
         - name: aeronmd-c
-          image: < replace with aeron benchmarks image >
+          image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:db089c15a8b591f1370f54abf027103912190673"
         - name: aeron-cluster-node
-          image: < replace with aeron benchmarks image >
+          image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:db089c15a8b591f1370f54abf027103912190673"

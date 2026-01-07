@@ -6,6 +6,16 @@ metadata:
 spec:
   containers:
     - name: aeronmd-c
-      image: < replace with aeron benchmarks image >
+      image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:db089c15a8b591f1370f54abf027103912190673"
     - name: aeron-cluster-client
-      image: < replace with aeron benchmarks image >
+      image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:db089c15a8b591f1370f54abf027103912190673"
+      command: ["k8s/k8s-aeron-cluster-client.sh"]
+      args:
+        - "--output-file"
+        - "cluster_c_source=caf"
+        - "--message-rate"
+        - "101K"
+        - "--message-length"
+        - "288"
+        - "--iterations"
+        - "60"

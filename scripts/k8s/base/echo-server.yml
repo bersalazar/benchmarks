@@ -7,3 +7,5 @@ spec:
   containers:
     - name: benchmark
       command: ["k8s/k8s-echo-server.sh"]
+      args:
+        - "/opt/aeron-md-config/bootstrap.properties"
