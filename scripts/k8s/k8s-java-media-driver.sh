@@ -15,7 +15,7 @@ f_generate_benchmark_properties
 
 # Starts the media driver with affinity set to the first core
 echo "** Starting with base cpu core ${CGROUP_CPUSETS[0]}"
-"${DIR}/../aeron/media-driver" &
+"${DIR}/../aeron/media-driver" "$@" &
 
 # Wait for Java process to be up
 f_wait_for_process 'io.aeron.driver.MediaDriver'

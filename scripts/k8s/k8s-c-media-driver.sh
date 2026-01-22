@@ -15,7 +15,7 @@ f_generate_benchmark_properties
 
 # Starts the media driver with affinity set to the first core
 echo "** Starting with base cpu core ${CGROUP_CPUSETS[0]}"
-"${DIR}/../aeron/c-media-driver" &
+"${DIR}/../aeron/c-media-driver" "$@" &
 
 # Wait for all background tasks
 fg

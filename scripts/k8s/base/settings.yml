@@ -15,4 +15,4 @@ spec:
 
   containers:
     - name: benchmark
-      image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:2ca925be148273593c4152b9585e5d1d5e59a765"
+      image: "< Ref to benchmark container >"
