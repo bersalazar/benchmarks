@@ -12,7 +12,8 @@ f_benchmark_pre
 
 # Starts the echo server with a restricted CPU affinity
 echo "** Starting with base cpu core ${CGROUP_CPUSETS[1]}"
-taskset -c "${CGROUP_CPUSETS[1]}" "${DIR}/../aeron/echo-server" &
+taskset -c "${CGROUP_CPUSETS[1]}" \
+"${DIR}/../aeron/echo-server" "$@" &
 
 # Wait for Java process to be up
 f_wait_for_process 'io.aeron.benchmarks.aeron.EchoNode'
