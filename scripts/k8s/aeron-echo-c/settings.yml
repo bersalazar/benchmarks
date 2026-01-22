@@ -11,7 +11,11 @@ spec:
   # Use Host networking
   # dnsPolicy: ClusterFirstWithHostNet
   # hostNetwork: true
+  initContainers:
+    - name: aeron-bootstrap
+      image: "< Ref to bootstrap container >"
+
   containers:
     - name: aeronmd-c
       # This is the benchmarks container with an alternate entrypoint
-      image: "195275652846.dkr.ecr.eu-west-1.amazonaws.com/aeron-benchmarks:db089c15a8b591f1370f54abf027103912190673"
+      image: "< Ref to benchmark container >"

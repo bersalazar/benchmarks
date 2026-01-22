@@ -94,13 +94,13 @@ rules:
     resources: [pods]
     verbs: [get, list]
 ---
-# Serviceaccount for aeron-k8s-bootstrap to run under
+# Serviceaccount for aeron-bootstrap to run under
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: aeron-benchmark-sa
 ---
-# Bind the previously created role to the aeron-k8s-bootstrap service account
+# Bind the previously created role to the aeron-bootstrap service account
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:

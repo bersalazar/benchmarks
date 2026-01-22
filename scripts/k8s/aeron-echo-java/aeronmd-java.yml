@@ -7,8 +7,7 @@ metadata:
     aeronmd: java
 spec:
   initContainers:
-    - name: aeron-k8s-bootstrap
-      image: 116332603969.dkr.ecr.eu-west-1.amazonaws.com/aeron-bootstrap:latest
+    - name: aeron-bootstrap
       # Don't pull, as we pre-build/pre-load the images for CI
       imagePullPolicy: Always
       env:
@@ -23,7 +22,7 @@ spec:
   containers:
     - name: aeronmd-java
       imagePullPolicy: Always
-      #command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-java-media-driver.sh"]
+      command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-java-media-driver.sh"]
       args:
         - /opt/aeron-md-config/bootstrap.properties
         - /opt/aeron-config/low-latency-driver.properties
