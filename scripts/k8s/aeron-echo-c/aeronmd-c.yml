@@ -4,15 +4,36 @@ kind: Pod
 metadata:
   name: all
   labels:
-    aeronmd: java
+    aeronmd: c
 spec:
+  initContainers:
+    - name: aeron-bootstrap
+      # Don't pull, as we pre-build/pre-load the images for CI
+      imagePullPolicy: Always
+      env:
+        # example config to alter discovery process goes here
+        - name: AERON_MD_DISCOVERY_PORT
+          value: "8050"
+        - name: AERON_MD_BOOTSTRAP_PATH
+          value: /opt/aeron-md-config/bootstrap.properties
+      volumeMounts:
+        - name: aeron-md-config-dir
+          mountPath: /opt/aeron-md-config
   containers:
     - name: aeronmd-c
       imagePullPolicy: Always
       command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-c-media-driver.sh"]
+      args:
+        - /opt/aeron-md-config/bootstrap.properties
+        - /opt/aeron-config/low-latency-driver.properties
+        - -Daeron.dir=/dev/shm/aeron
       volumeMounts:
         - name: shm
           mountPath: /dev/shm
+        - name: aeron-md-config-dir
+          mountPath: /opt/aeron-md-config
+        - name: config-volume
+          mountPath: /opt/aeron-config
       resources:
         limits:
           cpu: "8"
