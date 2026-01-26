@@ -3,6 +3,10 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: all
+  annotations:
+    dpdk/service-name: aeron-benchmark
+    dpdk/port: "1000"
+    dpdk/protocol: UDP
 spec:
   containers:
     - name: benchmark

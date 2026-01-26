@@ -81,15 +81,19 @@ function f_set_jvm_opts() {
       # This is important due to aeron benchmark runtimes validating if an interface that's provided as a connection string exists.
       # The DPDK interface is not visible to the OS, so the runtime fails startup due to a non-existent interface validation.
       SELECT_INTERFACE=""
+      ENDPOINT_SERVER="aeron-benchmark-0.aeron-benchmark.aeron-benchmark.svc.cluster.local" # address of endpointslice created by endpoint-slice-handler
+      ENDPOINT_CLIENT="aeron-benchmark-1.aeron-benchmark.aeron-benchmark.svc.cluster.local" # address of endpointslice created by endpoint-slice-handler
     else
       INTERFACE="$(ip -4 -json addr show "${INTERFACE_NAME}" | jq -r '.[] | .addr_info[] | select(.family == "inet") | .local')"
       SELECT_INTERFACE="|interface=${INTERFACE}/32"
+      ENDPOINT_SERVER="aeron-benchmark-0.aeron-benchmark.aeron" # media driver name resolver (DNR)
+      ENDPOINT_CLIENT="aeron-benchmark-1.aeron-benchmark.aeron" # media driver name resolver (DNR)
     fi
 
     export JVM_OPTS="-Dio.aeron.benchmarks.output.directory=/dev/shm/results \
     -Dio.aeron.benchmarks.aeron.embedded.media.driver=false \
-    -Dio.aeron.benchmarks.aeron.source.channel=aeron:udp?endpoint=aeron-benchmark-1.aeron-benchmark.aeron:13000${SELECT_INTERFACE} \
-    -Dio.aeron.benchmarks.aeron.destination.channel=aeron:udp?endpoint=aeron-benchmark-0.aeron-benchmark.aeron:13001${SELECT_INTERFACE}"
+    -Dio.aeron.benchmarks.aeron.source.channel=aeron:udp?endpoint=${ENDPOINT_CLIENT}:13000${SELECT_INTERFACE} \
+    -Dio.aeron.benchmarks.aeron.destination.channel=aeron:udp?endpoint=${ENDPOINT_SERVER}:13001${SELECT_INTERFACE}"
 
   elif [[ "${BENCHMARK_TYPE}" == *cluster* ]]; then
     case ${POD_NAME} in

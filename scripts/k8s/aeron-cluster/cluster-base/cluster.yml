@@ -32,7 +32,10 @@ spec:
             storage: 100Gi
   template:
     metadata:
-      annotations: {}
+      annotations:
+        dpdk/service-name: aeron-cluster
+        dpdk/port: "1000"
+        dpdk/protocol: UDP
       labels:
         app.kubernetes.io/component: aeron-cluster
     spec:
