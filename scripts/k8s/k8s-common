@@ -73,8 +73,7 @@ function f_set_jvm_opts() {
       export JVM_OPTS="-Daeron.cluster.egress.channel=aeron:udp?endpoint=${POD_NAME}.aeron-benchmark.aeron:0"
       return
     fi
-    export JVM_OPTS="-Daeron.cluster.egress.channel=aeron:udp?endpoint=${POD_NAME}.aeron-benchmark.aeron:0 \
-    -Daeron.cluster.replication.channel=aeron:udp?endpoint=${POD_NAME}.aeron-benchmark.aeron:0 \
+    export JVM_OPTS="-Daeron.cluster.replication.channel=aeron:udp?endpoint=${POD_NAME}.aeron-benchmark.aeron:0 \
     -Daeron.archive.replication.channel=aeron:udp?endpoint=${POD_NAME}.aeron-benchmark.aeron:0 \
     -Daeron.archive.control.channel=aeron:udp?endpoint=${POD_NAME}.aeron-benchmark.aeron:20004 \
     -Daeron.cluster.member.id=${POD_INDEX}"
