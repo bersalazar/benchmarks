@@ -8,15 +8,23 @@ metadata:
   # Additional multus network
   annotations:
     k8s.v1.cni.cncf.io/networks: aeron-network
+    aeron.io/media-driver: "true"
 spec:
   containers:
     - name: aeronmd-java
       imagePullPolicy: Always
       command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-java-media-driver.sh"]
+      args:
+        - /opt/aeron-md-config/bootstrap.properties
       volumeMounts:
         - name: shm
           mountPath: /dev/shm
+        - name: aeron-md-config-dir
+          mountPath: /opt/aeron-md-config
       resources:
+        requests:
+          cpu: "8"
+          memory: 8G
         limits:
           cpu: "8"
           memory: 8G
@@ -26,12 +34,3 @@ spec:
           value: "aeron-cluster-java"
       command:
         - "k8s/k8s-aeron-cluster-client.sh"
-      args:
-        - "--output-file"
-        - "aeronclusterjava"
-        - "--message-rate"
-        - "101K"
-        - "--message-length"
-        - "288"
-        - "--iterations"
-        - "60"
