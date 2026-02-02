@@ -1,13 +1,4 @@
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: aeron-cluster
-spec:
-  type: ClusterIP
-  clusterIP: None
-  publishNotReadyAddresses: true  # This is set so DNS resolves at all times, despite the Readiness check
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -16,7 +7,7 @@ metadata:
     app.kubernetes.io/component: aeron-cluster
 spec:
   replicas: 3
-  serviceName: aeron-cluster
+  podManagementPolicy: Parallel
   selector:
     matchLabels:
       app.kubernetes.io/component: aeron-cluster
