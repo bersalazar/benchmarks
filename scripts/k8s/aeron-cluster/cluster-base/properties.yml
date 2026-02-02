@@ -30,9 +30,9 @@ metadata:
   name: aeron-benchmark-properties
 data:
   cluster.properties: |
-    aeron.cluster.members=0,aeron-cluster-0.aeron-cluster:20000,aeron-cluster-0.aeron-cluster:20001,aeron-cluster-0.aeron-cluster:20002,aeron-cluster-0.aeron-cluster:20003,aeron-cluster-0.aeron-cluster:20004|\
-    1,aeron-cluster-1.aeron-cluster:20000,aeron-cluster-1.aeron-cluster:20001,aeron-cluster-1.aeron-cluster:20002,aeron-cluster-1.aeron-cluster:20003,aeron-cluster-1.aeron-cluster:20004|\
-    2,aeron-cluster-2.aeron-cluster:20000,aeron-cluster-2.aeron-cluster:20001,aeron-cluster-2.aeron-cluster:20002,aeron-cluster-2.aeron-cluster:20003,aeron-cluster-2.aeron-cluster:20004
+    aeron.cluster.members=0,aeron-cluster-0.aeron-benchmark.aeron:20000,aeron-cluster-0.aeron-benchmark.aeron:20001,aeron-cluster-0.aeron-benchmark.aeron:20002,aeron-cluster-0.aeron-benchmark.aeron:20003,aeron-cluster-0.aeron-benchmark.aeron:20004|\
+    1,aeron-cluster-1.aeron-benchmark.aeron:20000,aeron-cluster-1.aeron-benchmark.aeron:20001,aeron-cluster-1.aeron-benchmark.aeron:20002,aeron-cluster-1.aeron-benchmark.aeron:20003,aeron-cluster-1.aeron-benchmark.aeron:20004|\
+    2,aeron-cluster-2.aeron-benchmark.aeron:20000,aeron-cluster-2.aeron-benchmark.aeron:20001,aeron-cluster-2.aeron-benchmark.aeron:20002,aeron-cluster-2.aeron-benchmark.aeron:20003,aeron-cluster-2.aeron-benchmark.aeron:20004
 
     aeron.cluster.ingress.channel=aeron:udp
     aeron.archive.recording.events.enabled=false
@@ -64,7 +64,7 @@ data:
     io.aeron.benchmarks.output.file=bench_out.txt
     io.aeron.benchmarks.output.directory=/dev/shm/results
     aeron.cluster.ingress.channel=aeron:udp
-    aeron.cluster.ingress.endpoints=0=aeron-cluster-0.aeron-cluster:20000,1=aeron-cluster-1.aeron-cluster:20000,2=aeron-cluster-2.aeron-cluster:20000
+    aeron.cluster.ingress.endpoints=0=aeron-cluster-0.aeron-benchmark.aeron:20000,1=aeron-cluster-1.aeron-benchmark.aeron:20000,2=aeron-cluster-2.aeron-benchmark.aeron:20000
   low-latency-driver.properties: |
     aeron.conductor.idle.strategy=noop
     aeron.dir.delete.on.shutdown=true

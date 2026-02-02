@@ -12,6 +12,19 @@ spec:
       annotations:
         k8s.v1.cni.cncf.io/networks: aeron-network
     spec:
+      initContainers:
+        - name: aeron-bootstrap
+          # Don't pull, as we pre-build/pre-load the images for CI
+          imagePullPolicy: Always
+          env:
+            # example config to alter discovery process goes here
+            - name: AERON_MD_DISCOVERY_PORT
+              value: "8050"
+            - name: AERON_MD_BOOTSTRAP_PATH
+              value: /opt/aeron-md-config/bootstrap.properties
+          volumeMounts:
+            - name: aeron-md-config-dir
+              mountPath: /opt/aeron-md-config
       containers:
         - name: aeronmd-c
           imagePullPolicy: Always

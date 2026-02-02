@@ -14,7 +14,7 @@ echo "** Sleeping for ${BENCHMARK_PRE_SLEEP} seconds"
 sleep "${BENCHMARK_PRE_SLEEP}"
 
 # Starts the process with affinity set to the first core
-echo "** Starting with echo client base cpu core ${CGROUP_CPUSETS[1]}"
+echo "** Starting with echo client base CPU core ${CGROUP_CPUSETS[1]}"
 # Pass in the benchmark client args
 taskset -c "${CGROUP_CPUSETS[1]}" \
 "${DIR}/../benchmark-runner" \
