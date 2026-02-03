@@ -6,6 +6,9 @@ metadata:
 spec:
   template:
     spec:
+      initContainers:
+        - name: aeron-bootstrap
+          image: "< Ref to aeron-bootstrap container >"
       containers:
         - name: aeronmd-c
           image: "< Ref to benchmark container >"
