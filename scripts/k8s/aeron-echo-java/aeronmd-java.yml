@@ -19,6 +19,13 @@ spec:
       volumeMounts:
         - name: aeron-md-config-dir
           mountPath: /opt/aeron-md-config
+      resources:
+        requests:
+          cpu: "1"
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 256Mi
   containers:
     - name: aeronmd-java
       imagePullPolicy: Always
