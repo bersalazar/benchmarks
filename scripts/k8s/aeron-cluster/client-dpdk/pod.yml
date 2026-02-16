@@ -33,9 +33,10 @@ spec:
           mountPath: /hugepages-2Mi
         - name: shm
           mountPath: /dev/shm
-        - name: low-latency-properties-volume
+        - name: aeron-properties
           mountPath: /opt/aeron-benchmarks/scripts/aeron/low-latency-driver.properties
           subPath: low-latency-driver.properties
+
     - name: aeron-cluster-client
       env:
         - name: BENCHMARK_TYPE
