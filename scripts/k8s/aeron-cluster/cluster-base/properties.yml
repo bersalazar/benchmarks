@@ -27,7 +27,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: aeron-benchmark-properties
+  name: aeron-properties
 data:
   cluster.properties: |
     aeron.cluster.members=0,aeron-cluster-0.aeron-benchmark.aeron:20000,aeron-cluster-0.aeron-benchmark.aeron:20001,aeron-cluster-0.aeron-benchmark.aeron:20002,aeron-cluster-0.aeron-benchmark.aeron:20003,aeron-cluster-0.aeron-benchmark.aeron:20004|\
@@ -60,6 +60,7 @@ data:
     aeron.cluster.dir=/aeron-data/cluster
     aeron.archive.dir=/aeron-data/archive
   benchmark.properties: |
+    # client properties
     io.aeron.benchmarks.message.rate=100
     io.aeron.benchmarks.output.file=bench_out.txt
     io.aeron.benchmarks.output.directory=/dev/shm/results

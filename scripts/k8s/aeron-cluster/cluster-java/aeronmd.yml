@@ -11,6 +11,8 @@ spec:
       # Additional multus network
       annotations:
         k8s.v1.cni.cncf.io/networks: aeron-network
+      labels:
+        aeron.io/media-driver: "true" # needed by the aeron-bootstrap initcontainer to identify it as a media driver pod
     spec:
       initContainers:
         - name: aeron-bootstrap
@@ -21,23 +23,30 @@ spec:
             - name: AERON_MD_DISCOVERY_PORT
               value: "8050"
             - name: AERON_MD_BOOTSTRAP_PATH
-              value: /opt/aeron-md-config/bootstrap.properties
+              value: /opt/aeronmd-config/bootstrap.properties
           volumeMounts:
-            - name: aeron-md-config-dir
-              mountPath: /opt/aeron-md-config
+            - name: aeronmd-config
+              mountPath: /opt/aeronmd-config
+          resources:
+            requests:
+              cpu: "1"
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 256Mi
       containers:
         - name: aeronmd-java
           imagePullPolicy: Always
           command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-java-media-driver.sh"]
           args:
-            - /opt/aeron-md-config/bootstrap.properties
+            - /opt/aeronmd-config/bootstrap.properties
             - /opt/aeron-config/low-latency-driver.properties
           volumeMounts:
             - name: shm
               mountPath: /dev/shm
-            - name: aeron-md-config-dir
-              mountPath: /opt/aeron-md-config
-            - name: low-latency-driver-properties-volume
+            - name: aeronmd-config
+              mountPath: /opt/aeronmd-config
+            - name: aeron-properties
               mountPath: /opt/aeron-config
               subPath: low-latency-driver.properties
           resources:

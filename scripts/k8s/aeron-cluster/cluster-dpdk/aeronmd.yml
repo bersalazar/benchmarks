@@ -8,20 +8,6 @@ metadata:
 spec:
   template:
     spec:
-      volumes:
-        - name: shm
-          emptyDir:
-            medium: Memory
-        - name: hugepage-2mi
-          emptyDir:
-            medium: HugePages
-            sizeLimit: 1Gi
-        - name: low-latency-properties
-          configMap:
-            name: aeron-benchmark-properties
-            items:
-              - key: low-latency-driver.properties
-                path: low-latency-driver.properties
       containers:
         - name: aeronmd-dpdk
           imagePullPolicy: Always
@@ -54,7 +40,7 @@ spec:
               mountPath: /hugepages-2Mi
             - name: shm
               mountPath: /dev/shm
-            - name: low-latency-properties
+            - name: aeron-properties
               mountPath: /opt/aeron-config/low-latency-driver.properties
               subPath: low-latency-driver.properties
         - name: aeron-cluster-node

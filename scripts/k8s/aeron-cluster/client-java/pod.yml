@@ -10,17 +10,36 @@ metadata:
     k8s.v1.cni.cncf.io/networks: aeron-network
     aeron.io/media-driver: "true"
 spec:
+  initContainers:
+    - name: aeron-bootstrap
+      imagePullPolicy: Always
+      env:
+        # example config to alter discovery process goes here
+        - name: AERON_MD_DISCOVERY_PORT
+          value: "8050"
+        - name: AERON_MD_BOOTSTRAP_PATH
+          value: /opt/aeronmd-config/bootstrap.properties
+      volumeMounts:
+        - name: aeronmd-config
+          mountPath: /opt/aeronmd-config
+      resources:
+        requests:
+          cpu: "1"
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 256Mi
   containers:
     - name: aeronmd-java
-      imagePullPolicy: Always
+      imagePullPolicy: IfNotPresent
       command: ["/opt/aeron-benchmarks/scripts/k8s/k8s-java-media-driver.sh"]
       args:
-        - /opt/aeron-md-config/bootstrap.properties
+        - /opt/aeronmd-config/bootstrap.properties
       volumeMounts:
         - name: shm
           mountPath: /dev/shm
-        - name: aeron-md-config-dir
-          mountPath: /opt/aeron-md-config
+        - name: aeronmd-config
+          mountPath: /opt/aeronmd-config
       resources:
         requests:
           cpu: "8"
