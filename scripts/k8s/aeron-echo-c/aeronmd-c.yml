@@ -19,6 +19,13 @@ spec:
       volumeMounts:
         - name: aeron-md-config-dir
           mountPath: /opt/aeron-md-config
+      resources:
+        requests:
+          cpu: "1"
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 256Mi
   containers:
     - name: aeronmd-c
       imagePullPolicy: Always
@@ -35,6 +42,9 @@ spec:
         - name: config-volume
           mountPath: /opt/aeron-config
       resources:
+        requests:
+          cpu: "8"
+          memory: 8G
         limits:
           cpu: "8"
           memory: 8G
