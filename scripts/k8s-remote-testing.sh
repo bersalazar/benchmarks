@@ -95,13 +95,11 @@ if [[ "${TEST_TO_RUN}" == *cluster* ]]; then
 
   f_log "Deploying cluster: ${CLUSTER_DEPLOY}"
   kubectl --namespace "${K8S_NAMESPACE}" apply --wait=true --kustomize "k8s/${CLUSTER_DEPLOY}"
-  kubectl -n "${K8S_NAMESPACE}" wait --timeout=90s --for=condition=ContainersReady=true pod/aeron-cluster-0
-  kubectl -n "${K8S_NAMESPACE}" wait --timeout=90s --for=condition=ContainersReady=true pod/aeron-cluster-1
-  kubectl -n "${K8S_NAMESPACE}" wait --timeout=90s --for=condition=ContainersReady=true pod/aeron-cluster-2
+  kubectl --namespace "${K8S_NAMESPACE}" rollout status --timeout=2m statefulset/aeron-cluster
 
   f_log "Deploying aeron cluster client: ${CLIENT_DEPLOY}"
   kubectl --namespace "${K8S_NAMESPACE}" apply --wait=true --kustomize "k8s/${CLIENT_DEPLOY}"
-  kubectl -n "${K8S_NAMESPACE}" wait --timeout=90s --for=condition=ContainersReady=true pod/aeron-cluster-client
+  kubectl -n "${K8S_NAMESPACE}" wait --timeout=120s --for=condition=Ready=true pod/aeron-cluster-client
 
   # When the benchmark finishes, the benchmark containers stop, generating a NotReady condition
   f_log "Waiting for benchmarks to finish"

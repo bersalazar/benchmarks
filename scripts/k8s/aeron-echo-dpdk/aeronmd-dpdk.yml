@@ -30,6 +30,10 @@ spec:
         - name: config-volume
           mountPath: /opt/aeron-config
       resources:
+        requests:
+          cpu: "8"
+          memory: 8G
+          hugepages-2Mi: 1Gi
         limits:
           cpu: "8"
           memory: 8G
