@@ -47,37 +47,53 @@ function f_wait_for_thread() {
 #####################################################################################
 # Construct JVM_OPTS with dynamic interface lookup
 function f_set_jvm_opts() {
-  # If this is not a DPDK test...
-  if [[ "${BENCHMARK_TYPE}" == *echo* ]]; then
-    if [[ "${BENCHMARK_TYPE}" == *dpdk* ]]; then
-      # Don't select an interface if benchmark type is DPDK.
-      # This is important due to aeron benchmark runtimes validating if an interface that's provided as a connection string exists.
-      # The DPDK interface is not visible to the OS, so the runtime fails startup due to a non-existent interface validation.
-      SELECT_INTERFACE=""
-      ENDPOINT_SERVER="aeron-benchmark-0.aeron-benchmark.aeron-benchmark.svc.cluster.local" # address of endpointslice created by endpoint-slice-handler
-      ENDPOINT_CLIENT="aeron-benchmark-1.aeron-benchmark.aeron-benchmark.svc.cluster.local" # address of endpointslice created by endpoint-slice-handler
-    else
-      INTERFACE="$(ip -4 -json addr show "${INTERFACE_NAME}" | jq -r '.[] | .addr_info[] | select(.family == "inet") | .local')"
-      SELECT_INTERFACE="|interface=${INTERFACE}/32"
-      ENDPOINT_SERVER="aeron-benchmark-0.aeron-benchmark.aeron" # media driver name resolver (DNR)
-      ENDPOINT_CLIENT="aeron-benchmark-1.aeron-benchmark.aeron" # media driver name resolver (DNR)
-    fi
+  case "${BENCHMARK_TYPE}" in
+    *echo*)
+      if [[ "${BENCHMARK_TYPE}" == *dpdk* ]]; then
+        # Don't select an interface if benchmark type is DPDK.
+        # This is important due to aeron benchmark runtimes validating if an interface that's provided as a connection string exists.
+        # The DPDK interface is not visible to the OS, so the runtime fails startup due to a non-existent interface validation.
+        SELECT_INTERFACE=""
+        ENDPOINT_SERVER="aeron-benchmark-0.aeron-benchmark.aeron-benchmark.svc.cluster.local" # address of endpointslice created by endpoint-slice-handler
+        ENDPOINT_CLIENT="aeron-benchmark-1.aeron-benchmark.aeron-benchmark.svc.cluster.local" # address of endpointslice created by endpoint-slice-handler
+      else
+        INTERFACE="$(ip -4 -json addr show "${INTERFACE_NAME}" | jq -r '.[] | .addr_info[] | select(.family == "inet") | .local')"
+        SELECT_INTERFACE="|interface=${INTERFACE}/32"
+        ENDPOINT_SERVER="aeron-benchmark-0.aeron-benchmark.aeron" # media driver name resolver (DNR)
+        ENDPOINT_CLIENT="aeron-benchmark-1.aeron-benchmark.aeron" # media driver name resolver (DNR)
+      fi
+      ;;
+    *cluster*)
+      if [[ "${BENCHMARK_TYPE}" == *dpdk* ]]; then
+        # dpdk benchmarks use endpoint slice created by the endpoint-slice-handler, which uses the aeron-cluster headless service
+        address_suffix="aeron-benchmark"
+      else
+        # non-DPDK benchmarks (Java and C media drivers) use the media driver's resolver name (DNR)
+        address_suffix="aeron-benchmark.aeron"
+      fi
 
-    export JVM_OPTS="-Dio.aeron.benchmarks.output.directory=/dev/shm/results \
-    -Dio.aeron.benchmarks.aeron.embedded.media.driver=false \
-    -Dio.aeron.benchmarks.aeron.source.channel=aeron:udp?endpoint=${ENDPOINT_CLIENT}:13000${SELECT_INTERFACE} \
-    -Dio.aeron.benchmarks.aeron.destination.channel=aeron:udp?endpoint=${ENDPOINT_SERVER}:13001${SELECT_INTERFACE}"
+      # handle JVM opts for aeron-cluster-client
+      if [[ "${POD_NAME}" == *client* ]]; then
+        ingress_endpoints="0=aeron-cluster-0.${address_suffix}:20000,1=aeron-cluster-1.${address_suffix}:20000,2=aeron-cluster-2.${address_suffix}:20000"
+        export JVM_OPTS="-Daeron.cluster.egress.channel=aeron:udp?endpoint=${POD_NAME}.${address_suffix}:0 -Daeron.cluster.ingress.endpoints=${ingress_endpoints}"
+        return
+      fi
 
-  elif [[ "${BENCHMARK_TYPE}" == *cluster* ]]; then
-    if [[ "${POD_NAME}" == *client* ]]; then
-      export JVM_OPTS="-Daeron.cluster.egress.channel=aeron:udp?endpoint=${POD_NAME}.aeron-benchmark.aeron:0"
-      return
-    fi
-    export JVM_OPTS="-Daeron.cluster.replication.channel=aeron:udp?endpoint=${POD_NAME}.aeron-benchmark.aeron:0 \
-    -Daeron.archive.replication.channel=aeron:udp?endpoint=${POD_NAME}.aeron-benchmark.aeron:0 \
-    -Daeron.archive.control.channel=aeron:udp?endpoint=${POD_NAME}.aeron-benchmark.aeron:20004 \
-    -Daeron.cluster.member.id=${POD_INDEX}"
-  fi
+      # handle JVM opts for aeron-cluster member
+      cluster_members="0,aeron-cluster-0.${address_suffix}:20000,aeron-cluster-0.${address_suffix}:20001,aeron-cluster-0.${address_suffix}:20002,aeron-cluster-0.${address_suffix}:20003,aeron-cluster-0.${address_suffix}:20004|"
+      cluster_members+="1,aeron-cluster-1.${address_suffix}:20000,aeron-cluster-1.${address_suffix}:20001,aeron-cluster-1.${address_suffix}:20002,aeron-cluster-1.${address_suffix}:20003,aeron-cluster-1.${address_suffix}:20004|"
+      cluster_members+="2,aeron-cluster-2.${address_suffix}:20000,aeron-cluster-2.${address_suffix}:20001,aeron-cluster-2.${address_suffix}:20002,aeron-cluster-2.${address_suffix}:20003,aeron-cluster-2.${address_suffix}:20004"
+
+      export JVM_OPTS="-Daeron.cluster.member.id=${POD_INDEX} -Daeron.cluster.members=${cluster_members} \
+      -Daeron.cluster.replication.channel=aeron:udp?endpoint=${POD_NAME}.${address_suffix}:0 \
+      -Daeron.archive.replication.channel=aeron:udp?endpoint=${POD_NAME}.${address_suffix}:0 \
+      -Daeron.archive.control.channel=aeron:udp?endpoint=${POD_NAME}.${address_suffix}:20004"
+      ;;
+    *)
+      echo "** No benchmark type match for ${BENCHMARK_TYPE} **"
+      exit 1
+      ;;
+  esac
 }
 
 #####################################################################################
@@ -129,6 +145,14 @@ echo '*******************************'
 
 }
 
+#####################################################################################
+# Write a readiness file which helps readinessProbe know when the pod is ready
+function f_write_readiness_file() {
+  readiness_file="/dev/shm/aeron/ready"
+  echo "Writing readiness file: ${readiness_file}"
+  touch "${readiness_file}"
+}
+
 
 #####################################################################################
 # Things to run *after* a benchmark client runs
@@ -155,8 +179,6 @@ function f_benchmark_post(){
     echo "Creating results tarball: ${parent_dir}/results.tar.gz"
     tar -C "${parent_dir}" -czf "${parent_dir}/results.tar.gz" "${results_dir}"
   fi
-
-
 }
 
 #####################################################################################

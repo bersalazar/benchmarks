@@ -96,6 +96,14 @@ spec:
               cpu: '11' # caters for pinning each aeron cluster thread to a physical CPU core
               memory: 8G
               hugepages-2Mi: 1Gi
+          readinessProbe:
+            exec:
+              command:
+                - "test"
+                - "-f"
+                - "/dev/shm/aeron/ready"
+            initialDelaySeconds: 5
+            periodSeconds: 2
 
         - name: results
           image: public.ecr.aws/docker/library/busybox:stable
@@ -143,3 +151,19 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: aeron-benchmark-sa
+---
+# These services are deliberately empty, and updated via an EndpointSlice
+# as part of the benchmark process.
+# DPDK interfaces do not have an IP visible to K8s by default
+# https://kubernetes.io/docs/concepts/services-networking/endpoint-slices/
+apiVersion: v1
+kind: Service
+metadata:
+  name: aeron-benchmark
+  labels:
+    app: aeron-benchmark
+spec:
+  ports:
+    - port: 10000
+      name: aeron
+  clusterIP: None

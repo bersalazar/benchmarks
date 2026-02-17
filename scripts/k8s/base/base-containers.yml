@@ -51,6 +51,10 @@ spec:
         - name: aeron-md-config-dir
           mountPath: /opt/aeron-md-config
       resources:
+        requests:
+          cpu: "8"
+          memory: 10G
+          hugepages-2Mi: 1Gi
         limits:
           cpu: "8"
           memory: 10G

@@ -28,6 +28,9 @@ f_pin_thread "archive-conduct" "${CGROUP_CPUSETS[3]}"
 f_pin_thread "consensus-modul" "${CGROUP_CPUSETS[4]}"
 f_pin_thread "aeron-client-co" "${CGROUP_CPUSETS[5]}"
 
+# Write the file that indicates readiness
+f_write_readiness_file
+
 # Wait for all background tasks
 fg
 
