@@ -165,4 +165,4 @@ tar -C "results/${TIMESTAMP}" --strip-components=1 --wildcards -xf "results/${TI
 f_log "Results collected in: ${SCRIPT_DIR}/results/${TIMESTAMP}"
 
 f_log "Cleaning up the benchmark setup"
-#kubectl delete namespace "${K8S_NAMESPACE}" || true
+kubectl delete namespace "${K8S_NAMESPACE}" || true
