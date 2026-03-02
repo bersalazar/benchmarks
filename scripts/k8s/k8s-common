@@ -62,7 +62,13 @@ function f_set_jvm_opts() {
         ENDPOINT_SERVER="aeron-benchmark-0.aeron-benchmark.aeron" # media driver name resolver (DNR)
         ENDPOINT_CLIENT="aeron-benchmark-1.aeron-benchmark.aeron" # media driver name resolver (DNR)
       fi
+
+      export JVM_OPTS="-Dio.aeron.benchmarks.output.directory=/dev/shm/results \
+      -Dio.aeron.benchmarks.aeron.embedded.media.driver=false \
+      -Dio.aeron.benchmarks.aeron.source.channel=aeron:udp?endpoint=${ENDPOINT_CLIENT}:13000${SELECT_INTERFACE} \
+      -Dio.aeron.benchmarks.aeron.destination.channel=aeron:udp?endpoint=${ENDPOINT_SERVER}:13001${SELECT_INTERFACE}"
       ;;
+
     *cluster*)
       if [[ "${BENCHMARK_TYPE}" == *dpdk* ]]; then
         # dpdk benchmarks use endpoint slice created by the endpoint-slice-handler, which uses the aeron-cluster headless service
