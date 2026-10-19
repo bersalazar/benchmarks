@@ -2,6 +2,8 @@
 
 set -eo pipefail
 
+set -x
+
 function f_log() {
   echo "******************************************************************"
   echo "** $*"
@@ -9,7 +11,17 @@ function f_log() {
 
 function f_show_help() {
   f_log "Supported arguments are:"
-  echo "${0} (-n|--namespace '<namespace>' ) (-t|--test 'aeron-echo-dpdk|aeron-echo-java|aeron-echo-c|aeron-cluster-c|aeron-cluster-java|aeron-cluster-dpdk' ) (-i|--interface <ignored for DPDK> 'eth0')"
+  echo "${0} (-n|--namespace '<namespace>' ) (-t|--test 'aeron-echo-dpdk|aeron-echo-java|aeron-echo-c|aeron-cluster-c|aeron-cluster-java|aeron-cluster-dpdk' ) (-i|--interface <ignored for DPDK> 'eth0') (-g|--nodegroup 'perftest')"
+}
+
+# Renders a kustomization, pointing its nodeSelector and matching toleration at ${NODEGROUP}, and applies it
+function f_apply() {
+  kubectl kustomize "${1}" \
+    | NODEGROUP="${NODEGROUP}" yq '(.. | select(tag == "!!map" and has("nodeSelector"))) |= (
+        .nodeSelector["weareadaptive.com/nodegroup"] as $old
+        | .nodeSelector["weareadaptive.com/nodegroup"] = strenv(NODEGROUP)
+        | (.tolerations[] | select(.key == $old) | .key) = strenv(NODEGROUP))' \
+    | kubectl --namespace "${K8S_NAMESPACE}" apply --wait=true -f -
 }
 
 declare -r valid_tests=(
@@ -61,6 +73,11 @@ do
       shift
       shift
       ;;
+    -g|--nodegroup)
+      NODEGROUP="${2}"
+      shift
+      shift
+      ;;
     -h|--help)
       f_show_help
       exit 1
@@ -77,6 +94,7 @@ done
 K8S_NAMESPACE="${K8S_NAMESPACE:-aeron-benchmark}"
 TEST_TO_RUN="${TEST_TO_RUN:-aeron-cluster-java}"
 INTERFACE="${INTERFACE:-eth0}"
+NODEGROUP="${NODEGROUP:-perftest}"
 
 TIMESTAMP="$(date +"%Y-%m-%d-%H-%M-%S")"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
@@ -85,8 +103,9 @@ cd "${SCRIPT_DIR}"
 f_log "Deleting old benchmark setup"
 kubectl delete namespace "${K8S_NAMESPACE}" || true
 
-f_log "Creating namespace: ${K8S_NAMESPACE}"
+f_log "Creating namespace: ${K8S_NAMESPACE}, targeting node group: ${NODEGROUP}"
 kubectl create namespace "${K8S_NAMESPACE}" || true
+kubectl -n "${K8S_NAMESPACE}" create configmap k8s-common --from-file=k8s-common="${SCRIPT_DIR}/k8s/k8s-common"
 
 declare -r RESULTS_FILENAME="results-cluster-client"
 if [[ "${TEST_TO_RUN}" == *cluster* ]]; then
@@ -94,11 +113,11 @@ if [[ "${TEST_TO_RUN}" == *cluster* ]]; then
   f_log "Generating aeron cluster benchmark setup for: ${TEST_TO_RUN}"
 
   f_log "Deploying cluster: ${CLUSTER_DEPLOY}"
-  kubectl --namespace "${K8S_NAMESPACE}" apply --wait=true --kustomize "k8s/${CLUSTER_DEPLOY}"
+  f_apply "k8s/${CLUSTER_DEPLOY}"
   kubectl --namespace "${K8S_NAMESPACE}" rollout status --timeout=2m statefulset/aeron-cluster
 
   f_log "Deploying aeron cluster client: ${CLIENT_DEPLOY}"
-  kubectl --namespace "${K8S_NAMESPACE}" apply --wait=true --kustomize "k8s/${CLIENT_DEPLOY}"
+  f_apply "k8s/${CLIENT_DEPLOY}"
   kubectl -n "${K8S_NAMESPACE}" wait --timeout=120s --for=condition=Ready=true pod/aeron-cluster-client
 
   # When the benchmark finishes, the benchmark containers stop, generating a NotReady condition
@@ -132,7 +151,7 @@ if [[ "${TEST_TO_RUN}" == *cluster* ]]; then
 
 else
   f_log "Generating new benchmark setup for: ${TEST_TO_RUN}"
-  kubectl --namespace "${K8S_NAMESPACE}" apply --wait=true --kustomize "k8s/${TEST_TO_RUN}"
+  f_apply "k8s/${TEST_TO_RUN}"
   kubectl -n "${K8S_NAMESPACE}" wait --timeout=90s --for=condition=ContainersReady=true pod/aeron-benchmark-0
   kubectl -n "${K8S_NAMESPACE}" wait --timeout=90s --for=condition=ContainersReady=true pod/aeron-benchmark-1
 
@@ -164,5 +183,5 @@ tar -C "results/${TIMESTAMP}" --strip-components=1 --wildcards -xf "results/${TI
 
 f_log "Results collected in: ${SCRIPT_DIR}/results/${TIMESTAMP}"
 
-f_log "Cleaning up the benchmark setup"
-kubectl delete namespace "${K8S_NAMESPACE}" || true
+# f_log "Cleaning up the benchmark setup"
+# kubectl delete namespace "${K8S_NAMESPACE}" || true

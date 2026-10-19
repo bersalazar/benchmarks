@@ -75,7 +75,7 @@ function f_set_jvm_opts() {
         address_suffix="aeron-benchmark"
       else
         # non-DPDK benchmarks (Java and C media drivers) use the media driver's resolver name (DNR)
-        address_suffix="aeron-benchmark.aeron"
+        address_suffix="$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).aeron"
       fi
 
       # handle JVM opts for aeron-cluster-client
