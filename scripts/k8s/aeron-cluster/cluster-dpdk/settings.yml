@@ -9,7 +9,7 @@ spec:
       annotations:
         # These are required so dpdk-endpoint-slice-handler creates the corresponding EndpointSlices for each pod.
         dpdk/service-name: aeron-benchmark
-        dpdk/port: "1000"
+        dpdk/port: "50000"
         dpdk/protocol: UDP
     spec:
       containers:
