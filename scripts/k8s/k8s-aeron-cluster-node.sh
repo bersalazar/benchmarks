@@ -21,12 +21,12 @@ f_wait_for_process 'io.aeron.benchmarks.aeron.ClusterNode'
 f_wait_for_thread 'clustered-servi' 3 #TODO: consider f_wait_for_threads and pass an array of thread names
 
 # Sets the affinities for high performance threads
-f_pin_thread "clustered-servi" "${CGROUP_CPUSETS[0]}"
-f_pin_thread "archive-recorde" "${CGROUP_CPUSETS[1]}"
-f_pin_thread "archive-replaye" "${CGROUP_CPUSETS[2]}"
-f_pin_thread "archive-conduct" "${CGROUP_CPUSETS[3]}"
-f_pin_thread "consensus-modul" "${CGROUP_CPUSETS[4]}"
-f_pin_thread "aeron-client" "${CGROUP_CPUSETS[5]}"
+f_pin_thread "clustered-servi" "${CGROUP_CPUSETS[1]}"
+f_pin_thread "archive-recorde" "${CGROUP_CPUSETS[2]}"
+f_pin_thread "archive-replaye" "${CGROUP_CPUSETS[3]}"
+f_pin_thread "archive-conduct" "${CGROUP_CPUSETS[4]}"
+f_pin_thread "consensus-modul" "${CGROUP_CPUSETS[5]}"
+f_pin_thread "aeron-client" "${CGROUP_CPUSETS[6]}"
 
 # Write the file that indicates readiness
 f_write_readiness_file
