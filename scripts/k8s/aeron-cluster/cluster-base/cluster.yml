@@ -16,7 +16,7 @@ spec:
         name: data-volume-claim
       spec:
         accessModes: [ReadWriteOnce]
-        storageClassName: gp3
+        storageClassName: io2
         resources:
           requests:
             storage: 100Gi
