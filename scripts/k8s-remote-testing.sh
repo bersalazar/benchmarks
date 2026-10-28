@@ -4,7 +4,7 @@ set -eo pipefail
 
 function f_log() {
   echo "******************************************************************"
-  echo "** $*"
+  echo "** ${TEST_TO_RUN:+[${TEST_TO_RUN}] }$*"
 }
 
 function f_show_help() {
@@ -20,6 +20,16 @@ function f_apply() {
         | .nodeSelector["weareadaptive.com/nodegroup"] = strenv(NODEGROUP)
         | (.tolerations[] | select(.key == $old) | .key) = strenv(NODEGROUP))' \
     | kubectl --namespace "${K8S_NAMESPACE}" apply --wait=true -f -
+}
+
+# Copies a file out of a pod's results container
+function f_copy_file() {
+  kubectl --namespace "${K8S_NAMESPACE}" exec -c results "${1}" -- cat "${2}" > "${3}"
+}
+
+# Copies a directory's contents out of a pod's results container
+function f_copy_dir() {
+  kubectl --namespace "${K8S_NAMESPACE}" exec -c results "${1}" -- tar -C "${2}" -cf - . | tar -C "${3}" -xf -
 }
 
 declare -r valid_tests=(
@@ -142,10 +152,10 @@ if [[ "${TEST_TO_RUN}" == *cluster* ]]; then
   kubectl -n "${K8S_NAMESPACE}" logs --all-containers=true  aeron-cluster-client > "results/${TIMESTAMP}/logs-cluster-client.txt"
 
   # Copy the results over
-  kubectl -n "${K8S_NAMESPACE}" cp -c results aeron-cluster-client:/dev/shm/results.tar.gz "results/${TIMESTAMP}/${RESULTS_FILENAME}.tar.gz"
-  kubectl -n "${K8S_NAMESPACE}" cp -c results aeron-cluster-0:/dev/shm/results "results/${TIMESTAMP}/aeron-cluster-0"
-  kubectl -n "${K8S_NAMESPACE}" cp -c results aeron-cluster-1:/dev/shm/results "results/${TIMESTAMP}/aeron-cluster-1"
-  kubectl -n "${K8S_NAMESPACE}" cp -c results aeron-cluster-2:/dev/shm/results "results/${TIMESTAMP}/aeron-cluster-2"
+  f_copy_file aeron-cluster-client /dev/shm/results.tar.gz "results/${TIMESTAMP}/${RESULTS_FILENAME}.tar.gz"
+  f_copy_dir aeron-cluster-0 /dev/shm/results "results/${TIMESTAMP}/aeron-cluster-0"
+  f_copy_dir aeron-cluster-1 /dev/shm/results "results/${TIMESTAMP}/aeron-cluster-1"
+  f_copy_dir aeron-cluster-2 /dev/shm/results "results/${TIMESTAMP}/aeron-cluster-2"
 
 else
   f_log "Generating new benchmark setup for: ${TEST_TO_RUN}"
@@ -171,13 +181,13 @@ else
   kubectl -n "${K8S_NAMESPACE}" logs --all-containers=true  aeron-benchmark-1 > results/${TIMESTAMP}/logs-1.txt
 
   # Copy the tarball of results over
-  kubectl -n "${K8S_NAMESPACE}" cp -c results aeron-benchmark-1:/dev/shm/results.tar.gz "results/${TIMESTAMP}/${RESULTS_FILENAME}.tar.gz"
+  f_copy_file aeron-benchmark-1 /dev/shm/results.tar.gz "results/${TIMESTAMP}/${RESULTS_FILENAME}.tar.gz"
 fi
 
 # Extract the useful files
-tar -C "results/${TIMESTAMP}" --strip-components=1 --wildcards -xf "results/${TIMESTAMP}/${RESULTS_FILENAME}.tar.gz" '*.png' || echo "No PNG files found in results"
-tar -C "results/${TIMESTAMP}" --strip-components=1 --wildcards -xf "results/${TIMESTAMP}/${RESULTS_FILENAME}.tar.gz" '*.hgrm' "" || echo "No HGRM files found in results"
-tar -C "results/${TIMESTAMP}" --strip-components=1 --wildcards -xf "results/${TIMESTAMP}/${RESULTS_FILENAME}.tar.gz" '*.hgrm.FAIL' "" || true
+tar -C "results/${TIMESTAMP}" --strip-components=1 --wildcards -xf "results/${TIMESTAMP}/${RESULTS_FILENAME}.tar.gz" '*.png' 2> /dev/null || echo "No PNG files found in results"
+tar -C "results/${TIMESTAMP}" --strip-components=1 --wildcards -xf "results/${TIMESTAMP}/${RESULTS_FILENAME}.tar.gz" '*.hgrm' "" 2> /dev/null || echo "No HGRM files found in results"
+tar -C "results/${TIMESTAMP}" --strip-components=1 --wildcards -xf "results/${TIMESTAMP}/${RESULTS_FILENAME}.tar.gz" '*.hgrm.FAIL' "" 2> /dev/null || true
 
 f_log "Results collected in: ${SCRIPT_DIR}/results/${TIMESTAMP}"
 
