@@ -49,18 +49,20 @@ function f_wait_for_thread() {
 function f_set_jvm_opts() {
   case "${BENCHMARK_TYPE}" in
     *echo*)
+      local namespace
+      namespace="$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)"
       if [[ "${BENCHMARK_TYPE}" == *dpdk* ]]; then
         # Don't select an interface if benchmark type is DPDK.
         # This is important due to aeron benchmark runtimes validating if an interface that's provided as a connection string exists.
         # The DPDK interface is not visible to the OS, so the runtime fails startup due to a non-existent interface validation.
         SELECT_INTERFACE=""
-        ENDPOINT_SERVER="aeron-benchmark-0.aeron-benchmark.aeron-benchmark.svc.cluster.local" # address of endpointslice created by endpoint-slice-handler
-        ENDPOINT_CLIENT="aeron-benchmark-1.aeron-benchmark.aeron-benchmark.svc.cluster.local" # address of endpointslice created by endpoint-slice-handler
+        ENDPOINT_SERVER="aeron-benchmark-0.aeron-benchmark.${namespace}.svc.cluster.local" # address of endpointslice created by endpoint-slice-handler
+        ENDPOINT_CLIENT="aeron-benchmark-1.aeron-benchmark.${namespace}.svc.cluster.local" # address of endpointslice created by endpoint-slice-handler
       else
         INTERFACE="$(ip -4 -json addr show "${INTERFACE_NAME}" | jq -r '.[] | .addr_info[] | select(.family == "inet") | .local')"
         SELECT_INTERFACE="|interface=${INTERFACE}/32"
-        ENDPOINT_SERVER="aeron-benchmark-0.aeron-benchmark.aeron" # media driver name resolver (DNR)
-        ENDPOINT_CLIENT="aeron-benchmark-1.aeron-benchmark.aeron" # media driver name resolver (DNR)
+        ENDPOINT_SERVER="aeron-benchmark-0.${namespace}.aeron" # media driver name resolver (DNR)
+        ENDPOINT_CLIENT="aeron-benchmark-1.${namespace}.aeron" # media driver name resolver (DNR)
       fi
 
       export JVM_OPTS="-Dio.aeron.benchmarks.output.directory=/dev/shm/results \
